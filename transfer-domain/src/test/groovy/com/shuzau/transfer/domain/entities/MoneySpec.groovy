@@ -1,6 +1,7 @@
 package com.shuzau.transfer.domain.entities
 
 import com.shuzau.transfer.domain.exception.TransferException
+import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -11,7 +12,8 @@ import static com.shuzau.transfer.domain.entities.Money.usd
 @Unroll
 class MoneySpec extends Specification {
 
-    static Currency USD = Currency.getInstance("USD")
+    @Shared
+    private Currency USD = Currency.getInstance("USD")
 
     def "Should throw #excpetion when currency = #currency and amount = #amount"() {
         when:
