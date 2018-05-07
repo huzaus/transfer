@@ -9,10 +9,12 @@ import static lombok.AccessLevel.PRIVATE;
 @RequiredArgsConstructor(access = PRIVATE)
 public class TransactionId {
 
+    private static final TransactionId INITIAL_ID = new TransactionId(0L);
+
     private final Long id;
 
     static TransactionId initial() {
-        return new TransactionId(0L);
+        return INITIAL_ID;
     }
 
     boolean isInitial() {
