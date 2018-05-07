@@ -5,9 +5,8 @@ import java.util.Currency;
 
 import com.shuzau.transfer.domain.exception.TransferException;
 import lombok.Builder;
+import lombok.NonNull;
 import lombok.Value;
-
-import static java.util.Objects.requireNonNull;
 
 @Value
 @Builder
@@ -16,9 +15,7 @@ public class Money {
     private final BigDecimal amount;
     private final Currency currency;
 
-    private Money(BigDecimal amount, Currency currency) {
-        validate(amount);
-        validate(currency);
+    private Money(@NonNull BigDecimal amount, @NonNull Currency currency) {
         this.amount = amount;
         this.currency = currency;
     }
@@ -55,18 +52,9 @@ public class Money {
                     .build();
     }
 
-    private void validate(Money money) {
-        requireNonNull(money);
+    private void validate(@NonNull Money money) {
         if (currency != money.currency) {
-            throw new TransferException("Could't operate on different currencies: " + currency + " and " + money.currency);
+            throw new TransferException("Can't operate on different currencies: " + currency + " and " + money.currency);
         }
-    }
-
-    private void validate(BigDecimal amount) {
-        requireNonNull(amount);
-    }
-
-    private void validate(Currency currency) {
-        requireNonNull(currency);
     }
 }

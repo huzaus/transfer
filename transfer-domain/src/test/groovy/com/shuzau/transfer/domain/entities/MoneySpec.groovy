@@ -15,16 +15,16 @@ class MoneySpec extends Specification {
     @Shared
     private Currency USD = Currency.getInstance("USD")
 
-    def "Should throw #excpetion when currency = #currency and amount = #amount"() {
+    def "Should throw #exception when currency = #currency and amount = #amount"() {
         when:
             Money.builder()
                  .amount(amount)
                  .currency(currency)
                  .build()
         then:
-            thrown(excpetion)
+            thrown(exception)
         where:
-            currency | amount || excpetion
+            currency | amount || exception
             null     | 1.0    || NullPointerException
             USD      | null   || NullPointerException
     }
