@@ -85,4 +85,18 @@ class MoneySpec extends Specification {
             gbp(-0.0) || true
             pln(-1.0) || false
     }
+
+    def "Should negate #amount on negate"() {
+        given:
+            Money money = usd(amount)
+        when:
+            Money negatedAmount = money.negate()
+        then:
+            negatedAmount == usd(expectedAmout)
+        where:
+            amount || expectedAmout
+            10.0   || -10.0
+            -10.0  || 10.0
+            0.0    || 0.0
+    }
 }

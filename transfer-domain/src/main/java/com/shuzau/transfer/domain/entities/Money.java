@@ -52,6 +52,13 @@ public class Money {
                     .build();
     }
 
+    public Money negate() {
+        return Money.builder()
+                    .amount(this.amount.negate())
+                    .currency(currency)
+                    .build();
+    }
+
     private void validate(@NonNull Money money) {
         if (currency != money.currency) {
             throw new TransferException("Can't operate on different currencies: " + currency + " and " + money.currency);
