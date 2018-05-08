@@ -1,4 +1,4 @@
-package com.shuzau.transfer.domain.configuration;
+package com.shuzau.transfer.domain.core;
 
 import com.shuzau.transfer.domain.primary.AccountRegistry;
 

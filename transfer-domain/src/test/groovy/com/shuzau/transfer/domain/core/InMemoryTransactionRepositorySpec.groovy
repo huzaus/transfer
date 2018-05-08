@@ -1,15 +1,13 @@
-package com.shuzau.transfer.domain.configuration
+package com.shuzau.transfer.domain.core
 
-import com.shuzau.transfer.domain.entities.AccountId
-import com.shuzau.transfer.domain.entities.Transaction
 import com.shuzau.transfer.domain.exception.TransferException
 import com.shuzau.transfer.domain.secondary.TransactionRepository
 import spock.lang.Shared
 import spock.lang.Specification
 
-import static com.shuzau.transfer.domain.entities.Money.gbp
-import static com.shuzau.transfer.domain.entities.Money.pln
-import static com.shuzau.transfer.domain.entities.Money.usd
+import static Money.gbp
+import static Money.pln
+import static Money.usd
 import static java.util.Optional.empty
 
 class InMemoryTransactionRepositorySpec extends Specification {

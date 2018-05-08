@@ -1,11 +1,11 @@
-package com.shuzau.transfer.domain.entities
+package com.shuzau.transfer.domain.core
 
 import com.shuzau.transfer.domain.exception.TransferException
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static com.shuzau.transfer.domain.entities.Money.usd
+import static com.shuzau.transfer.domain.core.Money.usd
 
 @Unroll
 class AccountSpec extends Specification {

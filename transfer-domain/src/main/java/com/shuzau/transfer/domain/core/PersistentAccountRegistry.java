@@ -1,11 +1,7 @@
-package com.shuzau.transfer.domain.configuration;
+package com.shuzau.transfer.domain.core;
 
 import java.util.Optional;
 
-import com.shuzau.transfer.domain.entities.Account;
-import com.shuzau.transfer.domain.entities.AccountId;
-import com.shuzau.transfer.domain.entities.Money;
-import com.shuzau.transfer.domain.entities.Transaction;
 import com.shuzau.transfer.domain.primary.AccountRegistry;
 import com.shuzau.transfer.domain.secondary.TransactionRepository;
 import lombok.NonNull;

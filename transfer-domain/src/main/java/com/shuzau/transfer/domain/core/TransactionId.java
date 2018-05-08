@@ -1,4 +1,4 @@
-package com.shuzau.transfer.domain.entities;
+package com.shuzau.transfer.domain.core;
 
 import lombok.RequiredArgsConstructor;
 import lombok.Value;

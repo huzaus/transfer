@@ -1,16 +1,14 @@
-package com.shuzau.transfer.domain.configuration
+package com.shuzau.transfer.domain.core
 
-import com.shuzau.transfer.domain.entities.Account
-import com.shuzau.transfer.domain.entities.AccountId
 import com.shuzau.transfer.domain.primary.AccountRegistry
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static com.shuzau.transfer.domain.configuration.TransferDomainConfiguration.inMemoryAccountRegistry
-import static com.shuzau.transfer.domain.entities.Money.gbp
-import static com.shuzau.transfer.domain.entities.Money.pln
-import static com.shuzau.transfer.domain.entities.Money.usd
+import static com.shuzau.transfer.domain.core.TransferDomainConfiguration.inMemoryAccountRegistry
+import static Money.gbp
+import static Money.pln
+import static Money.usd
 import static java.util.Optional.empty
 
 @Unroll
