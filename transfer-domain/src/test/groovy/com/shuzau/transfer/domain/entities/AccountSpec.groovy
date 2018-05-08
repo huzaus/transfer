@@ -110,4 +110,25 @@ class AccountSpec extends Specification {
             usd(5.0)  | usd(0.0)  || usd(5.0)
             usd(-5.0) | usd(2.0)  || usd(-3.0)
     }
+
+    def "Should throw NullPointerException when transaction is null on from"() {
+        when:
+            Account.from(null)
+        then:
+            thrown(NullPointerException)
+    }
+
+    def "Should create Account from transaction"() {
+        given:
+            Transaction transaction = Transaction.createNewAccountTransaction(accountId, usd(10.0))
+                                                 .nextDepositTransaction(usd(3.0))
+                                                 .nextWithdrawTransaction(usd(4.5))
+        when:
+            Account account = Account.from(transaction)
+        then:
+            with(account) {
+                id == accountId
+                balance == usd(8.5)
+            }
+    }
 }

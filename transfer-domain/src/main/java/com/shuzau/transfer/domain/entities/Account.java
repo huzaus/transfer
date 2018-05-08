@@ -20,6 +20,20 @@ public class Account {
     @NonNull
     private Money balance;
 
+    public static Account from(@NonNull Transaction transaction) {
+        Money balance = transaction.getAmount();
+        Transaction currentTransaction = transaction;
+        while (!currentTransaction.isInitial()) {
+            currentTransaction = currentTransaction.getPreviousTransaction();
+            balance = balance.add(currentTransaction.getAmount());
+        }
+        return Account.builder()
+                      .id(transaction.getAccountId())
+                      .balance(balance)
+                      .build();
+
+    }
+
     public Account withdraw(Money amount) {
         validate(amount);
         balance = Optional.of(amount)
