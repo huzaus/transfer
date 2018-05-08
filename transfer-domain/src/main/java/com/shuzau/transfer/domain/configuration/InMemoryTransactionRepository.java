@@ -45,6 +45,11 @@ class InMemoryTransactionRepository implements TransactionRepository {
         }
     }
 
+    @Override
+    public void delete(@NonNull AccountId id) {
+        storage.remove(id);
+    }
+
     private Transaction compareAndGet(Transaction newTransaction, Transaction oldTransaction) {
         requireNonNull(newTransaction.getPreviousTransaction());
         return Optional.of(newTransaction)

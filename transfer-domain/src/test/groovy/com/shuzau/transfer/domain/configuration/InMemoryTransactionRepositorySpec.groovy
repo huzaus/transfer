@@ -99,6 +99,7 @@ class InMemoryTransactionRepositorySpec extends Specification {
         then:
             transaction == depositTransaction
     }
+
     def "Should save withdraw transaction" ()    {
         given:
             AccountId newAccountId = transactionRepository.newAccountId()
@@ -111,9 +112,21 @@ class InMemoryTransactionRepositorySpec extends Specification {
             initialTransaction == transactionRepository.getLatestTransactionByAccountId(newAccountId).get()
         when:
             transactionRepository.save(withdrawTransaction)
-        and:
-            Transaction transaction = transactionRepository.getLatestTransactionByAccountId(newAccountId).get()
         then:
-            transaction == withdrawTransaction
+            withdrawTransaction == transactionRepository.getLatestTransactionByAccountId(newAccountId).get()
+    }
+
+    def "Should return empty transaction for deleted account on getLatestTransactionByAccountId" ()    {
+        given:
+            AccountId deletedAccount = transactionRepository.newAccountId()
+        and:
+            Transaction initialTransaction = Transaction.createNewAccountTransaction(deletedAccount, usd(100.0))
+            transactionRepository.save(initialTransaction)
+        expect:
+            initialTransaction == transactionRepository.getLatestTransactionByAccountId(deletedAccount).get()
+        when:
+            transactionRepository.delete(deletedAccount)
+        then:
+            empty() == transactionRepository.getLatestTransactionByAccountId(deletedAccount)
     }
 }
