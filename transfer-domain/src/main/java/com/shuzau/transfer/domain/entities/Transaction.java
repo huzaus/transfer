@@ -10,13 +10,13 @@ public class Transaction {
     private final AccountId accountId;
     private final TransactionId id;
     private final Money amount;
-    private final TransactionId previousId;
+    private final Transaction previousTransaction;
 
-    private Transaction(AccountId accountId, TransactionId id, Money amount, TransactionId previousId) {
+    private Transaction(AccountId accountId, TransactionId id, Money amount, Transaction previousTransaction) {
         this.accountId = accountId;
         this.id = id;
         this.amount = amount;
-        this.previousId = previousId;
+        this.previousTransaction = previousTransaction;
     }
 
     public static Transaction createNewAccountTransaction(@NonNull AccountId accountId, @NonNull Money initialBalance) {
@@ -37,7 +37,7 @@ public class Transaction {
 
     public Transaction nextWithdrawTransaction(@NonNull Money amount) {
         return Transaction.builder()
-                          .previousId(id)
+                          .previousTransaction(this)
                           .id(id.nextId())
                           .accountId(accountId)
                           .amount(amount.negate())
@@ -46,7 +46,7 @@ public class Transaction {
 
     public Transaction nextDepositTransaction(@NonNull Money amount) {
         return Transaction.builder()
-                          .previousId(id)
+                          .previousTransaction(this)
                           .id(id.nextId())
                           .accountId(accountId)
                           .amount(amount)
@@ -58,7 +58,7 @@ public class Transaction {
         private AccountId accountId;
         private TransactionId id;
         private Money amount;
-        private TransactionId previousId;
+        private Transaction previousTransaction;
 
         private TransactionBuilder() {
         }
@@ -78,13 +78,13 @@ public class Transaction {
             return this;
         }
 
-        private TransactionBuilder previousId(TransactionId previousId) {
-            this.previousId = previousId;
+        private TransactionBuilder previousTransaction(Transaction previousTransaction) {
+            this.previousTransaction = previousTransaction;
             return this;
         }
 
         private Transaction build() {
-            return new Transaction(accountId, id, amount, previousId);
+            return new Transaction(accountId, id, amount, previousTransaction);
         }
     }
 }

@@ -51,7 +51,7 @@ class TransactionSpec extends Specification {
             with(withdrawTransaction) {
                 accountId == defaultAccountId
                 amount == usd(withdrawAmount).negate()
-                previousId == initialTransaction.id
+                previousTransaction == initialTransaction
                 id == initialTransaction.id.nextId()
             }
         where:
@@ -79,7 +79,7 @@ class TransactionSpec extends Specification {
             with(depositTransaction) {
                 accountId == defaultAccountId
                 amount == usd(depositAmount)
-                previousId == initialTransaction.id
+                previousTransaction == initialTransaction
                 id == initialTransaction.id.nextId()
             }
         where:
