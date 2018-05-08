@@ -37,24 +37,64 @@ class TransactionSpec extends Specification {
         then:
             thrown(NullPointerException)
         where:
-            defaultAcountId        | initialBalance
+            defaultAcountId  | initialBalance
             null             | usd(10.0)
             AccountId.of(1L) | null
     }
 
-    def "Should create withdraw transaction with #initialBalance #currency balance"() {
+    def "Should create withdraw transaction with #withdrawAmount #currency amount"() {
         given:
-            Transaction initialTransaction = createNewAccountTransaction(defaultAccountId, usd(initialBalance))
+            Transaction initialTransaction = createNewAccountTransaction(defaultAccountId, usd(10.0))
         when:
             Transaction withdrawTransaction = initialTransaction.nextWithdrawTransaction(usd(withdrawAmount))
         then:
             with(withdrawTransaction) {
                 accountId == defaultAccountId
-                amount == usd(initialBalance - withdrawAmount)
+                amount == usd(withdrawAmount).negate()
+                previousId == initialTransaction.id
+                id == initialTransaction.id.nextId()
             }
         where:
-            initialBalance | withdrawAmount | currency
-            10.0           | 5.0            | 'GBP'
-            -10.0          | 10.0           | 'USD'
+            withdrawAmount | currency
+            5.0            | 'GBP'
+            -5.0           | 'USD'
+            0.0            | 'USD'
+    }
+
+    def "Should throw NullPointerException when amount is null on nextWithdrawTransaction"() {
+        given:
+            Transaction initialTransaction = createNewAccountTransaction(defaultAccountId, usd(10.0))
+        when:
+            initialTransaction.nextWithdrawTransaction(null)
+        then:
+            thrown(NullPointerException)
+    }
+
+    def "Should create deposit transaction with #depositAmount #currency amount"() {
+        given:
+            Transaction initialTransaction = createNewAccountTransaction(defaultAccountId, usd(10.0))
+        when:
+            Transaction depositTransaction = initialTransaction.nextDepositTransaction(usd(depositAmount))
+        then:
+            with(depositTransaction) {
+                accountId == defaultAccountId
+                amount == usd(depositAmount)
+                previousId == initialTransaction.id
+                id == initialTransaction.id.nextId()
+            }
+        where:
+            depositAmount | currency
+            5.0           | 'GBP'
+            -5.0          | 'USD'
+            0.0           | 'USD'
+    }
+
+    def "Should throw NullPointerException when amount is null on nextDepositTransaction"() {
+        given:
+            Transaction initialTransaction = createNewAccountTransaction(defaultAccountId, usd(10.0))
+        when:
+            initialTransaction.nextDepositTransaction(null)
+        then:
+            thrown(NullPointerException)
     }
 }
