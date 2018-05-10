@@ -1,38 +1,47 @@
 package com.shuzau.transfer.domain.core
 
 import com.shuzau.transfer.domain.exception.TransferException
-import spock.lang.Shared
+import com.shuzau.transfer.domain.secondary.TransactionRepository
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static com.shuzau.transfer.domain.core.Money.gbp
 import static com.shuzau.transfer.domain.core.Money.usd
+import static com.shuzau.transfer.domain.core.Transaction.createNewAccountTransaction
 
 @Unroll
 class AccountSpec extends Specification {
 
-    @Shared
-    private AccountId accountId = AccountId.of(1L)
+    private static TransactionRepository transactionRepository = new InMemoryTransactionRepository()
 
-    def "Should throw #exception when id = #id and money = #money"() {
+    def "Should throw #exception when transaction = #transaction and transactionRepository = #repository on from"() {
         when:
-            Account.builder()
-                   .id(AccountId.of(id))
-                   .balance(money)
-                   .build()
+            Account.from(transaction)
+                   .withRepository(repository)
         then:
             thrown(exception)
         where:
-            id   | money     || exception
-            null | usd(10.0) || NullPointerException
-            1L   | null      || NullPointerException
+            transaction                                                                  | repository            || exception
+            null                                                                         | transactionRepository || NullPointerException
+            createNewAccountTransaction(transactionRepository.newAccountId(), usd(10.0)) | null                  || NullPointerException
+    }
+
+    def "Should throw #exception when transaction = #transaction and balance = #balance on newAccount"() {
+        when:
+            Account.newAccount(balance)
+                   .withRepository(repository)
+        then:
+            thrown(exception)
+        where:
+            balance   | repository            || exception
+            null      | transactionRepository || NullPointerException
+            usd(10.0) | null                  || NullPointerException
     }
 
     def "Should throw #exception when amount=#amount on withdraw"() {
         given:
-            Account account = Account.builder()
-                                     .id(accountId)
-                                     .balance(usd(10.0))
-                                     .build()
+            Account account = Account.newAccount(gbp(10.0))
+                                     .withRepository(transactionRepository)
         when:
             account.withdraw(amount)
         then:
@@ -40,15 +49,13 @@ class AccountSpec extends Specification {
         where:
             amount    || exception
             null      || NullPointerException
-            usd(-1.0) || TransferException
+            gbp(-1.0) || TransferException
     }
 
     def "Should throw #exception when amount=#amount on deposit"() {
         given:
-            Account account = Account.builder()
-                                     .id(accountId)
-                                     .balance(usd(10.0))
-                                     .build()
+            Account account = Account.newAccount(gbp(10.0))
+                                     .withRepository(transactionRepository)
         when:
             account.deposit(amount)
         then:
@@ -56,15 +63,13 @@ class AccountSpec extends Specification {
         where:
             amount    || exception
             null      || NullPointerException
-            usd(-1.0) || TransferException
+            gbp(-1.0) || TransferException
     }
 
     def "Should throw TransferException when balance(#balance) < amount(#amount) on withdraw"() {
         given:
-            Account account = Account.builder()
-                                     .id(accountId)
-                                     .balance(balance)
-                                     .build()
+            Account account = Account.newAccount(balance)
+                                     .withRepository(transactionRepository)
         when:
             account.withdraw(amount)
         then:
@@ -78,10 +83,8 @@ class AccountSpec extends Specification {
 
     def "Account with #balance should have #expectedBalance after withdraw of #amount"() {
         given:
-            Account account = Account.builder()
-                                     .id(accountId)
-                                     .balance(balance)
-                                     .build()
+            Account account = Account.newAccount(balance)
+                                     .withRepository(transactionRepository)
         when:
             account.withdraw(amount)
         then:
@@ -95,10 +98,8 @@ class AccountSpec extends Specification {
 
     def "Account with #balance should have #expectedBalance after deposit of #amount"() {
         given:
-            Account account = Account.builder()
-                                     .id(accountId)
-                                     .balance(balance)
-                                     .build()
+            Account account = Account.newAccount(balance)
+                                     .withRepository(transactionRepository)
         when:
             account.deposit(amount)
         then:
@@ -111,20 +112,16 @@ class AccountSpec extends Specification {
             usd(-5.0) | usd(2.0)  || usd(-3.0)
     }
 
-    def "Should throw NullPointerException when transaction is null on from"() {
-        when:
-            Account.from(null)
-        then:
-            thrown(NullPointerException)
-    }
 
     def "Should create Account from transaction"() {
         given:
-            Transaction transaction = Transaction.createNewAccountTransaction(accountId, usd(10.0))
-                                                 .nextDepositTransaction(usd(3.0))
-                                                 .nextWithdrawTransaction(usd(4.5))
+            AccountId accountId = transactionRepository.newAccountId()
+            Transaction transaction = createNewAccountTransaction(accountId, usd(10.0))
+                    .nextDepositTransaction(usd(3.0))
+                    .nextWithdrawTransaction(usd(4.5))
         when:
             Account account = Account.from(transaction)
+                                     .withRepository(transactionRepository)
         then:
             with(account) {
                 id == accountId

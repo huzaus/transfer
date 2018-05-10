@@ -11,7 +11,7 @@ public interface TransactionRepository {
 
     Optional<Transaction> getLatestTransactionByAccountId(AccountId id);
 
-    void save(Transaction transaction);
+    Transaction save(Transaction transaction);
 
     void delete(AccountId id);
 }

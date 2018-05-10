@@ -30,7 +30,7 @@ class InMemoryTransactionRepository implements TransactionRepository {
 
 
     @Override
-    public void save(@NonNull Transaction newTransaction) {
+    public Transaction save(@NonNull Transaction newTransaction) {
         Transaction savedTransaction = Optional.of(newTransaction)
                                                .filter(Transaction::isInitial)
                                                .map(transaction -> Optional.ofNullable(storage.putIfAbsent(transaction.getAccountId(), transaction))
@@ -41,6 +41,7 @@ class InMemoryTransactionRepository implements TransactionRepository {
         if (!Objects.equals(savedTransaction, newTransaction)) {
             throw new TransferException("Failed to save transaction " + newTransaction);
         }
+        return savedTransaction;
     }
 
     @Override
