@@ -1,27 +1,16 @@
 package com.shuzau.transfer.domain.core;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
-import static lombok.AccessLevel.PRIVATE;
+import static lombok.AccessLevel.PROTECTED;
 
 @Value
-@RequiredArgsConstructor(access = PRIVATE)
+@RequiredArgsConstructor(access = PROTECTED, staticName = "of")
 public class TransactionId {
 
-    private static final TransactionId INITIAL_ID = new TransactionId(0L);
-
+    @NonNull
     private final Long id;
 
-    static TransactionId initial() {
-        return INITIAL_ID;
-    }
-
-    boolean isInitial() {
-        return 0L == id;
-    }
-
-    TransactionId nextId() {
-        return new TransactionId(id + 1);
-    }
 }

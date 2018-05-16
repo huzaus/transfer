@@ -16,11 +16,17 @@ class InMemoryTransactionRepository implements TransactionRepository {
 
     private final Map<AccountId, Transaction> storage = new ConcurrentHashMap<>();
 
-    private final AtomicLong sequence = new AtomicLong(0L);
+    private final AtomicLong accountSequence = new AtomicLong(0L);
+    private final AtomicLong transactionSequence = new AtomicLong(0L);
 
     @Override
     public AccountId newAccountId() {
-        return AccountId.of(sequence.incrementAndGet());
+        return AccountId.of(accountSequence.incrementAndGet());
+    }
+
+    @Override
+    public TransactionId nextTransactionId() {
+        return TransactionId.of(transactionSequence.incrementAndGet());
     }
 
     @Override

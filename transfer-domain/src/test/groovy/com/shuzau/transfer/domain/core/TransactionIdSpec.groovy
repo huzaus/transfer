@@ -4,21 +4,19 @@ import spock.lang.Specification
 
 class TransactionIdSpec extends Specification {
 
-    def "Should create initial Id"() {
-        given:
-            TransactionId initialId = TransactionId.initial()
-        expect:
-            initialId.id == 0L
-            initialId.initial
+    def "Should create TransactionId with provided value"() {
+        when:
+            TransactionId transactionId = TransactionId.of(id)
+        then:
+            transactionId.id == id
+        where:
+            id = 1_650L
     }
 
-    def "Should create Id with incremented value"() {
-        given:
-            TransactionId initialId = TransactionId.initial()
+    def "Should throw NullPointerException when id is null"() {
         when:
-            TransactionId transactionId = initialId.nextId()
+            TransactionId.of(null)
         then:
-            transactionId.id == 1L
-            !transactionId.initial
+            thrown(NullPointerException)
     }
 }

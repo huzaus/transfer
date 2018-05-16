@@ -4,55 +4,57 @@ import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static com.shuzau.transfer.domain.core.Money.gbp
 import static com.shuzau.transfer.domain.core.Money.usd
-import static com.shuzau.transfer.domain.core.Transaction.createNewAccountTransaction
 
 @Unroll
 class TransactionSpec extends Specification {
     @Shared
     private defaultAccountId = AccountId.of(1L)
 
-    def "Should create transaction for new account with #initialBalance #currency balance"() {
+    def "Should create transaction for new account with #balance balance"() {
         given:
-            Transaction transaction = createNewAccountTransaction(newAccountId, Money.builder()
-                                                                                     .amount(initialBalance)
-                                                                                     .currency(Currency.getInstance(currency))
-                                                                                     .build())
+            Transaction transaction = Transaction.createNewAccountTransaction(newAccountId, balance)
+                                                 .withId(transactionId)
         expect:
             with(transaction) {
                 accountId == newAccountId
-                amount.amount == initialBalance
-                amount.currency == Currency.getInstance(currency)
-                id == TransactionId.initial()
+                amount == balance
+                initial == true
             }
         where:
-            newAccountId     | initialBalance | currency
-            AccountId.of(1L) | 10.0           | 'GBP'
-            AccountId.of(2L) | -10.0          | 'USD'
+            transactionId         | newAccountId     | balance
+            TransactionId.of(10L) | AccountId.of(1L) | usd(10.0)
+            TransactionId.of(11L) | AccountId.of(2L) | gbp(-10.0)
     }
 
-    def "Should throw NullPointerException with balance == #initialBalance account id == #accountId on createNewAccountTransaction"() {
+    def "Should throw NullPointerException when transactionId == #transactionId, balance == #balance account id == #accountId on createNewAccountTransaction"() {
         when:
-            createNewAccountTransaction(defaultAcountId, initialBalance)
+            Transaction.createNewAccountTransaction(accountId, balance)
+                       .withId(transactionId)
         then:
             thrown(NullPointerException)
         where:
-            defaultAcountId  | initialBalance
-            null             | usd(10.0)
-            AccountId.of(1L) | null
+            transactionId        | accountId        | balance
+            null                 | AccountId.of(1L) | usd(10.0)
+            TransactionId.of(1L) | null             | usd(10.0)
+            TransactionId.of(1L) | AccountId.of(1L) | null
     }
 
     def "Should create withdraw transaction with #withdrawAmount #currency amount"() {
         given:
-            Transaction initialTransaction = createNewAccountTransaction(defaultAccountId, usd(10.0))
+            Transaction initialTransaction = Transaction.createNewAccountTransaction(defaultAccountId, usd(10.0))
+                                                        .withId(TransactionId.of(1L))
+
         when:
             Transaction withdrawTransaction = initialTransaction.nextWithdrawTransaction(usd(withdrawAmount))
+                                                                .withId(TransactionId.of(2L))
+
         then:
             with(withdrawTransaction) {
                 accountId == defaultAccountId
                 amount == usd(withdrawAmount).negate()
                 previousTransaction == initialTransaction
-                id == initialTransaction.id.nextId()
             }
         where:
             withdrawAmount | currency
@@ -63,24 +65,28 @@ class TransactionSpec extends Specification {
 
     def "Should throw NullPointerException when amount is null on nextWithdrawTransaction"() {
         given:
-            Transaction initialTransaction = createNewAccountTransaction(defaultAccountId, usd(10.0))
+            Transaction initialTransaction = Transaction.createNewAccountTransaction(defaultAccountId, usd(10.0))
+                                                        .withId(TransactionId.of(1L))
+
         when:
             initialTransaction.nextWithdrawTransaction(null)
+                              .withId(TransactionId.of(2L))
         then:
             thrown(NullPointerException)
     }
 
     def "Should create deposit transaction with #depositAmount #currency amount"() {
         given:
-            Transaction initialTransaction = createNewAccountTransaction(defaultAccountId, usd(10.0))
+            Transaction initialTransaction = Transaction.createNewAccountTransaction(defaultAccountId, usd(10.0))
+                                                        .withId(TransactionId.of(1L))
         when:
             Transaction depositTransaction = initialTransaction.nextDepositTransaction(usd(depositAmount))
+                                                               .withId(TransactionId.of(2L))
         then:
             with(depositTransaction) {
                 accountId == defaultAccountId
                 amount == usd(depositAmount)
                 previousTransaction == initialTransaction
-                id == initialTransaction.id.nextId()
             }
         where:
             depositAmount | currency
@@ -91,7 +97,8 @@ class TransactionSpec extends Specification {
 
     def "Should throw NullPointerException when amount is null on nextDepositTransaction"() {
         given:
-            Transaction initialTransaction = createNewAccountTransaction(defaultAccountId, usd(10.0))
+            Transaction initialTransaction = Transaction.createNewAccountTransaction(defaultAccountId, usd(10.0))
+                                                        .withId(TransactionId.of(1L))
         when:
             initialTransaction.nextDepositTransaction(null)
         then:

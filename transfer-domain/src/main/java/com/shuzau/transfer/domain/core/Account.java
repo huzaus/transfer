@@ -1,7 +1,6 @@
 package com.shuzau.transfer.domain.core;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.shuzau.transfer.domain.exception.TransferException;
 import com.shuzau.transfer.domain.secondary.TransactionRepository;
@@ -11,7 +10,6 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
-import static com.shuzau.transfer.domain.core.Transaction.createNewAccountTransaction;
 import static lombok.AccessLevel.PRIVATE;
 
 @RequiredArgsConstructor(access = PRIVATE)
@@ -22,7 +20,7 @@ public class Account {
 
     private final AccountId id;
     private final TransactionRepository transactionRepository;
-    private AtomicReference<Transaction> latestTransaction;
+    private Transaction latestTransaction;
 
 
     static FromTransactionBuilder from(@NonNull Transaction transaction) {
@@ -39,12 +37,14 @@ public class Account {
                 .map(getBalance()::subtract)
                 .filter(Money::isPositive)
                 .orElseThrow(() -> new TransferException("Insufficient funds"));
-        latestTransaction.getAndUpdate(transaction -> transactionRepository.save(transaction.nextWithdrawTransaction(amount)));
+        latestTransaction = transactionRepository.save(latestTransaction.nextWithdrawTransaction(amount)
+                                                                        .withId(transactionRepository.nextTransactionId()));
     }
 
     public void deposit(@NonNull Money amount) {
         validate(amount);
-        latestTransaction.getAndUpdate(transaction -> transactionRepository.save(transaction.nextDepositTransaction(amount)));
+        latestTransaction = transactionRepository.save(latestTransaction.nextDepositTransaction(amount)
+                                                                        .withId(transactionRepository.nextTransactionId()));
     }
 
     private void validate(Money amount) {
@@ -54,7 +54,7 @@ public class Account {
     }
 
     public Money getBalance() {
-        Transaction currentTransaction = latestTransaction.get();
+        Transaction currentTransaction = latestTransaction;
         Money balance = currentTransaction.getAmount();
         while (!currentTransaction.isInitial()) {
             currentTransaction = currentTransaction.getPreviousTransaction();
@@ -73,7 +73,7 @@ public class Account {
 
         Account withRepository(@NonNull TransactionRepository transactionRepository) {
             Account account = new Account(latestTransaction.getAccountId(), transactionRepository);
-            account.latestTransaction = new AtomicReference<>(latestTransaction);
+            account.latestTransaction = latestTransaction;
             return account;
         }
     }
@@ -89,7 +89,8 @@ public class Account {
         Account withRepository(@NonNull TransactionRepository transactionRepository) {
             AccountId accountId = transactionRepository.newAccountId();
             Account account = new Account(accountId, transactionRepository);
-            account.latestTransaction = new AtomicReference<>(transactionRepository.save(createNewAccountTransaction(accountId, balance)));
+            account.latestTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(accountId, balance)
+                                                                              .withId(transactionRepository.nextTransactionId()));
             return account;
         }
     }

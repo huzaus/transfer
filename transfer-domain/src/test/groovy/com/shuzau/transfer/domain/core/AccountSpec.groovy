@@ -7,12 +7,14 @@ import spock.lang.Unroll
 
 import static com.shuzau.transfer.domain.core.Money.gbp
 import static com.shuzau.transfer.domain.core.Money.usd
-import static com.shuzau.transfer.domain.core.Transaction.createNewAccountTransaction
 
 @Unroll
 class AccountSpec extends Specification {
 
     private static TransactionRepository transactionRepository = new InMemoryTransactionRepository()
+
+    private static Transaction sampleTransaction = Transaction.createNewAccountTransaction(transactionRepository.newAccountId(), usd(10.0))
+                                                              .withId(transactionRepository.nextTransactionId())
 
     def "Should throw #exception when transaction = #transaction and transactionRepository = #repository on from"() {
         when:
@@ -21,9 +23,9 @@ class AccountSpec extends Specification {
         then:
             thrown(exception)
         where:
-            transaction                                                                  | repository            || exception
-            null                                                                         | transactionRepository || NullPointerException
-            createNewAccountTransaction(transactionRepository.newAccountId(), usd(10.0)) | null                  || NullPointerException
+            transaction       | repository            || exception
+            null              | transactionRepository || NullPointerException
+            sampleTransaction | null                  || NullPointerException
     }
 
     def "Should throw #exception when transaction = #transaction and balance = #balance on newAccount"() {
@@ -116,9 +118,12 @@ class AccountSpec extends Specification {
     def "Should create Account from transaction"() {
         given:
             AccountId accountId = transactionRepository.newAccountId()
-            Transaction transaction = createNewAccountTransaction(accountId, usd(10.0))
-                    .nextDepositTransaction(usd(3.0))
-                    .nextWithdrawTransaction(usd(4.5))
+            Transaction transaction = Transaction.createNewAccountTransaction(accountId, usd(10.0))
+                                                 .withId(transactionRepository.nextTransactionId())
+                                                 .nextDepositTransaction(usd(3.0))
+                                                 .withId(transactionRepository.nextTransactionId())
+                                                 .nextWithdrawTransaction(usd(4.5))
+                                                 .withId(transactionRepository.nextTransactionId())
         when:
             Account account = Account.from(transaction)
                                      .withRepository(transactionRepository)

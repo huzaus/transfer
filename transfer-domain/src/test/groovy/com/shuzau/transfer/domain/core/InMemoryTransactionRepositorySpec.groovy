@@ -23,6 +23,15 @@ class InMemoryTransactionRepositorySpec extends Specification {
             accountId.id + 1 == newAccountId.id
     }
 
+    def "Should incremented transaction id sequence on nextTransactionId"() {
+        given:
+            TransactionId transactionId = transactionRepository.nextTransactionId()
+        when:
+            TransactionId nextTransactionId = transactionRepository.nextTransactionId()
+        then:
+            transactionId.id + 1 == nextTransactionId.id
+    }
+
     def "Should throw NullPointerException then account id is null on getLatestTransactionByAccountId"() {
         when:
             transactionRepository.getLatestTransactionByAccountId(null)
@@ -41,9 +50,8 @@ class InMemoryTransactionRepositorySpec extends Specification {
         given:
             AccountId accountId = transactionRepository.newAccountId()
         and:
-            Transaction transaction = Transaction.createNewAccountTransaction(accountId, usd(10.0))
-        and:
-            transactionRepository.save(transaction)
+            Transaction transaction = transactionRepository.save(Transaction.createNewAccountTransaction(accountId, usd(10.0))
+                                                                            .withId(transactionRepository.nextTransactionId()))
         when:
             Optional optional = transactionRepository.getLatestTransactionByAccountId(accountId)
         then:
@@ -51,43 +59,49 @@ class InMemoryTransactionRepositorySpec extends Specification {
     }
 
 
-    def "Should throw TransferException on saving non initial transaction for newly created account" () {
+    def "Should throw TransferException on saving non initial transaction for newly created account"() {
         given:
             AccountId accountId = transactionRepository.newAccountId()
         and:
             Transaction initialTransaction = Transaction.createNewAccountTransaction(accountId, gbp(100.0))
+                                                        .withId(transactionRepository.nextTransactionId())
         and:
             Transaction depositTransaction = initialTransaction.nextDepositTransaction(gbp(100.0))
+                                                               .withId(transactionRepository.nextTransactionId())
         when:
             transactionRepository.save(depositTransaction)
         then:
             thrown(TransferException)
     }
 
-    def "Should throw TransferException on saving outdated transaction" () {
+    def "Should throw TransferException on saving outdated transaction"() {
         given:
             AccountId accountId = transactionRepository.newAccountId()
         and:
-            Transaction initialTransaction = Transaction.createNewAccountTransaction(accountId, pln(100.0))
-            transactionRepository.save(initialTransaction)
+            Transaction initialTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(accountId, pln(100.0))
+                                                                                   .withId(transactionRepository.nextTransactionId()))
         and:
             Transaction outdatedTransaction = initialTransaction.nextWithdrawTransaction(pln(100.0))
+                                                                .withId(transactionRepository.nextTransactionId())
         and:
-            transactionRepository.save(initialTransaction.nextWithdrawTransaction(pln(55.0)))
+            transactionRepository.save(initialTransaction.nextWithdrawTransaction(pln(55.0))
+                                                         .withId(transactionRepository.nextTransactionId()))
+
         when:
             transactionRepository.save(outdatedTransaction)
         then:
             thrown(TransferException)
     }
 
-    def "Should save deposit transaction" ()    {
+    def "Should save deposit transaction"() {
         given:
             AccountId newAccountId = transactionRepository.newAccountId()
         and:
-            Transaction initialTransaction = Transaction.createNewAccountTransaction(newAccountId, usd(100.0))
-            transactionRepository.save(Transaction.createNewAccountTransaction(newAccountId, usd(100.0)))
+            Transaction initialTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(newAccountId, usd(100.0))
+                                                                                   .withId(transactionRepository.nextTransactionId()))
         and:
             Transaction depositTransaction = initialTransaction.nextDepositTransaction(usd(11.0))
+                                                               .withId(transactionRepository.nextTransactionId())
         expect:
             initialTransaction == transactionRepository.getLatestTransactionByAccountId(newAccountId).get()
         when:
@@ -98,14 +112,16 @@ class InMemoryTransactionRepositorySpec extends Specification {
             transaction == depositTransaction
     }
 
-    def "Should save withdraw transaction" ()    {
+    def "Should save withdraw transaction"() {
         given:
             AccountId newAccountId = transactionRepository.newAccountId()
         and:
             Transaction initialTransaction = Transaction.createNewAccountTransaction(newAccountId, usd(100.0))
+                                                        .withId(transactionRepository.nextTransactionId())
             transactionRepository.save(initialTransaction)
         and:
             Transaction withdrawTransaction = initialTransaction.nextWithdrawTransaction(usd(15.0))
+                                                                .withId(transactionRepository.nextTransactionId())
         expect:
             initialTransaction == transactionRepository.getLatestTransactionByAccountId(newAccountId).get()
         when:
@@ -114,12 +130,12 @@ class InMemoryTransactionRepositorySpec extends Specification {
             withdrawTransaction == transactionRepository.getLatestTransactionByAccountId(newAccountId).get()
     }
 
-    def "Should return empty transaction for deleted account on getLatestTransactionByAccountId" ()    {
+    def "Should return empty transaction for deleted account on getLatestTransactionByAccountId"() {
         given:
             AccountId deletedAccount = transactionRepository.newAccountId()
         and:
-            Transaction initialTransaction = Transaction.createNewAccountTransaction(deletedAccount, usd(100.0))
-            transactionRepository.save(initialTransaction)
+            Transaction initialTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(deletedAccount, usd(100.0))
+                                                                                   .withId(transactionRepository.nextTransactionId()))
         expect:
             initialTransaction == transactionRepository.getLatestTransactionByAccountId(deletedAccount).get()
         when:
