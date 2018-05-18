@@ -1,5 +1,6 @@
-package com.shuzau.transfer.domain.core
+package com.shuzau.transfer.domain.transaction
 
+import com.shuzau.transfer.domain.core.AccountId
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll

@@ -1,4 +1,4 @@
-package com.shuzau.transfer.domain.core
+package com.shuzau.transfer.domain.transaction
 
 import spock.lang.Specification
 

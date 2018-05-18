@@ -2,6 +2,8 @@ package com.shuzau.transfer.domain.core
 
 import com.shuzau.transfer.domain.exception.TransferException
 import com.shuzau.transfer.domain.secondary.TransactionRepository
+import com.shuzau.transfer.domain.transaction.Transaction
+import com.shuzau.transfer.domain.transaction.TransactionId
 import spock.lang.Shared
 import spock.lang.Specification
 

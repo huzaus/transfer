@@ -8,6 +8,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.shuzau.transfer.domain.exception.TransferException;
 import com.shuzau.transfer.domain.secondary.TransactionRepository;
+import com.shuzau.transfer.domain.transaction.Transaction;
+import com.shuzau.transfer.domain.transaction.TransactionId;
 import lombok.NonNull;
 
 import static java.util.Objects.requireNonNull;

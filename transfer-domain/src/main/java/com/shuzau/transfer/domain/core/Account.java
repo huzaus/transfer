@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import com.shuzau.transfer.domain.exception.TransferException;
 import com.shuzau.transfer.domain.secondary.TransactionRepository;
+import com.shuzau.transfer.domain.transaction.Transaction;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
