@@ -24,11 +24,11 @@ public class Account {
     private Transaction latestTransaction;
 
 
-    static FromTransactionBuilder from(@NonNull Transaction transaction) {
+    static Builder from(@NonNull Transaction transaction) {
         return new FromTransactionBuilder(transaction);
     }
 
-    static NewAccountBuilder newAccount(@NonNull Money balance) {
+    static Builder newAccount(@NonNull Money balance) {
         return new NewAccountBuilder(balance);
     }
 
@@ -64,7 +64,13 @@ public class Account {
         return balance;
     }
 
-    static class FromTransactionBuilder {
+
+    interface Builder {
+
+        Account withRepository(@NonNull TransactionRepository transactionRepository);
+    }
+
+    static class FromTransactionBuilder implements Builder {
 
         private final Transaction latestTransaction;
 
@@ -72,14 +78,15 @@ public class Account {
             latestTransaction = transaction;
         }
 
-        Account withRepository(@NonNull TransactionRepository transactionRepository) {
+        @Override
+        public Account withRepository(@NonNull TransactionRepository transactionRepository) {
             Account account = new Account(latestTransaction.getAccountId(), transactionRepository);
             account.latestTransaction = latestTransaction;
             return account;
         }
     }
 
-    static class NewAccountBuilder {
+    static class NewAccountBuilder implements Builder {
 
         private final Money balance;
 
@@ -87,7 +94,8 @@ public class Account {
             this.balance = balance;
         }
 
-        Account withRepository(@NonNull TransactionRepository transactionRepository) {
+        @Override
+        public Account withRepository(@NonNull TransactionRepository transactionRepository) {
             AccountId accountId = transactionRepository.newAccountId();
             Account account = new Account(accountId, transactionRepository);
             account.latestTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(accountId, balance)

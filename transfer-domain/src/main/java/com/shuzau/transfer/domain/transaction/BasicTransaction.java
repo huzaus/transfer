@@ -7,7 +7,7 @@ import lombok.ToString;
 
 @EqualsAndHashCode
 @ToString
-public class BasicTransaction implements Transaction {
+class BasicTransaction implements Transaction {
 
     private final AccountId accountId;
     private final TransactionId id;

@@ -10,13 +10,16 @@ import lombok.ToString;
 @EqualsAndHashCode
 @ToString
 @Builder
-class IncommingTransfer implements Transaction {
+class BasicTransfer implements Transaction {
 
     @NonNull
-    BasicTransaction basicTransaction;
+    Transaction transaction;
 
     @NonNull
     AccountId sourceAccountId;
+
+    @NonNull
+    TransferType type;
 
     @Override
     public boolean isInitial() {
@@ -25,25 +28,29 @@ class IncommingTransfer implements Transaction {
 
     @Override
     public AccountId getAccountId() {
-        return basicTransaction.getAccountId();
+        return transaction.getAccountId();
     }
 
     @Override
     public TransactionId getId() {
-        return basicTransaction.getId();
+        return transaction.getId();
     }
 
     @Override
     public Money getAmount() {
-        return basicTransaction.getAmount();
+        return transaction.getAmount();
     }
 
     @Override
     public Transaction getPreviousTransaction() {
-        return basicTransaction.getPreviousTransaction();
+        return transaction.getPreviousTransaction();
     }
 
     protected AccountId getSourceAccountId() {
         return sourceAccountId;
+    }
+
+    protected TransferType getType() {
+        return type;
     }
 }
