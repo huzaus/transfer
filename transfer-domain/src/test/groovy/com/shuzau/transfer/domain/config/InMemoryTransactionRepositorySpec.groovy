@@ -1,15 +1,14 @@
-package com.shuzau.transfer.domain.core
+package com.shuzau.transfer.domain.config
 
+import com.shuzau.transfer.domain.core.Money
 import com.shuzau.transfer.domain.exception.TransferException
 import com.shuzau.transfer.domain.secondary.TransactionRepository
+import com.shuzau.transfer.domain.transaction.AccountId
 import com.shuzau.transfer.domain.transaction.Transaction
 import com.shuzau.transfer.domain.transaction.TransactionId
 import spock.lang.Shared
 import spock.lang.Specification
 
-import static Money.gbp
-import static Money.pln
-import static Money.usd
 import static java.util.Optional.empty
 
 class InMemoryTransactionRepositorySpec extends Specification {
@@ -52,7 +51,7 @@ class InMemoryTransactionRepositorySpec extends Specification {
         given:
             AccountId accountId = transactionRepository.newAccountId()
         and:
-            Transaction transaction = transactionRepository.save(Transaction.createNewAccountTransaction(accountId, usd(10.0))
+            Transaction transaction = transactionRepository.save(Transaction.createNewAccountTransaction(accountId, Money.usd(10.0))
                                                                             .withId(transactionRepository.nextTransactionId()))
         when:
             Optional optional = transactionRepository.getLatestTransactionByAccountId(accountId)
@@ -65,10 +64,10 @@ class InMemoryTransactionRepositorySpec extends Specification {
         given:
             AccountId accountId = transactionRepository.newAccountId()
         and:
-            Transaction initialTransaction = Transaction.createNewAccountTransaction(accountId, gbp(100.0))
+            Transaction initialTransaction = Transaction.createNewAccountTransaction(accountId, Money.gbp(100.0))
                                                         .withId(transactionRepository.nextTransactionId())
         and:
-            Transaction depositTransaction = initialTransaction.nextDepositTransaction(gbp(100.0))
+            Transaction depositTransaction = initialTransaction.nextDepositTransaction(Money.gbp(100.0))
                                                                .withId(transactionRepository.nextTransactionId())
         when:
             transactionRepository.save(depositTransaction)
@@ -80,13 +79,13 @@ class InMemoryTransactionRepositorySpec extends Specification {
         given:
             AccountId accountId = transactionRepository.newAccountId()
         and:
-            Transaction initialTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(accountId, pln(100.0))
+            Transaction initialTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(accountId, Money.pln(100.0))
                                                                                    .withId(transactionRepository.nextTransactionId()))
         and:
-            Transaction outdatedTransaction = initialTransaction.nextWithdrawTransaction(pln(100.0))
+            Transaction outdatedTransaction = initialTransaction.nextWithdrawTransaction(Money.pln(100.0))
                                                                 .withId(transactionRepository.nextTransactionId())
         and:
-            transactionRepository.save(initialTransaction.nextWithdrawTransaction(pln(55.0))
+            transactionRepository.save(initialTransaction.nextWithdrawTransaction(Money.pln(55.0))
                                                          .withId(transactionRepository.nextTransactionId()))
 
         when:
@@ -99,10 +98,10 @@ class InMemoryTransactionRepositorySpec extends Specification {
         given:
             AccountId newAccountId = transactionRepository.newAccountId()
         and:
-            Transaction initialTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(newAccountId, usd(100.0))
+            Transaction initialTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(newAccountId, Money.usd(100.0))
                                                                                    .withId(transactionRepository.nextTransactionId()))
         and:
-            Transaction depositTransaction = initialTransaction.nextDepositTransaction(usd(11.0))
+            Transaction depositTransaction = initialTransaction.nextDepositTransaction(Money.usd(11.0))
                                                                .withId(transactionRepository.nextTransactionId())
         expect:
             initialTransaction == transactionRepository.getLatestTransactionByAccountId(newAccountId).get()
@@ -118,11 +117,11 @@ class InMemoryTransactionRepositorySpec extends Specification {
         given:
             AccountId newAccountId = transactionRepository.newAccountId()
         and:
-            Transaction initialTransaction = Transaction.createNewAccountTransaction(newAccountId, usd(100.0))
+            Transaction initialTransaction = Transaction.createNewAccountTransaction(newAccountId, Money.usd(100.0))
                                                         .withId(transactionRepository.nextTransactionId())
             transactionRepository.save(initialTransaction)
         and:
-            Transaction withdrawTransaction = initialTransaction.nextWithdrawTransaction(usd(15.0))
+            Transaction withdrawTransaction = initialTransaction.nextWithdrawTransaction(Money.usd(15.0))
                                                                 .withId(transactionRepository.nextTransactionId())
         expect:
             initialTransaction == transactionRepository.getLatestTransactionByAccountId(newAccountId).get()
@@ -136,7 +135,7 @@ class InMemoryTransactionRepositorySpec extends Specification {
         given:
             AccountId deletedAccount = transactionRepository.newAccountId()
         and:
-            Transaction initialTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(deletedAccount, usd(100.0))
+            Transaction initialTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(deletedAccount, Money.usd(100.0))
                                                                                    .withId(transactionRepository.nextTransactionId()))
         expect:
             initialTransaction == transactionRepository.getLatestTransactionByAccountId(deletedAccount).get()

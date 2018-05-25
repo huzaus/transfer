@@ -1,6 +1,5 @@
 package com.shuzau.transfer.domain.transaction;
 
-import com.shuzau.transfer.domain.core.AccountId;
 import com.shuzau.transfer.domain.core.Money;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

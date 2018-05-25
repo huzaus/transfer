@@ -1,4 +1,4 @@
-package com.shuzau.transfer.domain.core;
+package com.shuzau.transfer.domain.config;
 
 import java.util.Map;
 import java.util.Objects;
@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.shuzau.transfer.domain.exception.TransferException;
 import com.shuzau.transfer.domain.secondary.TransactionRepository;
+import com.shuzau.transfer.domain.transaction.AccountId;
 import com.shuzau.transfer.domain.transaction.Transaction;
 import com.shuzau.transfer.domain.transaction.TransactionId;
 import lombok.NonNull;

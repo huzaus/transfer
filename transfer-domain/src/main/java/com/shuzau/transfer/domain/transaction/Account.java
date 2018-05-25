@@ -1,10 +1,10 @@
-package com.shuzau.transfer.domain.core;
+package com.shuzau.transfer.domain.transaction;
 
 import java.util.Optional;
 
+import com.shuzau.transfer.domain.core.Money;
 import com.shuzau.transfer.domain.exception.TransferException;
 import com.shuzau.transfer.domain.secondary.TransactionRepository;
-import com.shuzau.transfer.domain.transaction.Transaction;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -24,11 +24,11 @@ public class Account {
     private Transaction latestTransaction;
 
 
-    static Builder from(@NonNull Transaction transaction) {
+    public static Builder from(@NonNull Transaction transaction) {
         return new FromTransactionBuilder(transaction);
     }
 
-    static Builder newAccount(@NonNull Money balance) {
+    public static Builder newAccount(@NonNull Money balance) {
         return new NewAccountBuilder(balance);
     }
 
@@ -65,12 +65,12 @@ public class Account {
     }
 
 
-    interface Builder {
+    public interface Builder {
 
         Account withRepository(@NonNull TransactionRepository transactionRepository);
     }
 
-    static class FromTransactionBuilder implements Builder {
+    private static class FromTransactionBuilder implements Builder {
 
         private final Transaction latestTransaction;
 
@@ -86,7 +86,7 @@ public class Account {
         }
     }
 
-    static class NewAccountBuilder implements Builder {
+    private static class NewAccountBuilder implements Builder {
 
         private final Money balance;
 
