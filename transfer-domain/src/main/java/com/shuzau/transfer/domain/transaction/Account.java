@@ -5,6 +5,7 @@ import java.util.Optional;
 import com.shuzau.transfer.domain.core.Money;
 import com.shuzau.transfer.domain.exception.TransferException;
 import com.shuzau.transfer.domain.secondary.TransactionRepository;
+import com.shuzau.transfer.domain.transfer.TransferId;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -45,6 +46,11 @@ public class Account {
     public void deposit(@NonNull Money amount) {
         validate(amount);
         latestTransaction = transactionRepository.save(latestTransaction.nextTransaction(amount)
+                                                                        .withId(transactionRepository.nextTransactionId()));
+    }
+
+    public void transfer(@NonNull TransferId transferId, @NonNull Money amount) {
+        latestTransaction = transactionRepository.save(latestTransaction.nextTransferTransaction(transferId, amount)
                                                                         .withId(transactionRepository.nextTransactionId()));
     }
 
