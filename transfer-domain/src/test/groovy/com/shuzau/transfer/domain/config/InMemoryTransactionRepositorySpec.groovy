@@ -6,11 +6,15 @@ import com.shuzau.transfer.domain.secondary.TransactionRepository
 import com.shuzau.transfer.domain.transaction.AccountId
 import com.shuzau.transfer.domain.transaction.Transaction
 import com.shuzau.transfer.domain.transaction.TransactionId
+import com.shuzau.transfer.domain.transfer.TransferId
 import spock.lang.Shared
 import spock.lang.Specification
+import spock.lang.Unroll
 
+import static com.shuzau.transfer.domain.core.Money.usd
 import static java.util.Optional.empty
 
+@Unroll
 class InMemoryTransactionRepositorySpec extends Specification {
     @Shared
     TransactionRepository transactionRepository = new InMemoryTransactionRepository()
@@ -51,7 +55,7 @@ class InMemoryTransactionRepositorySpec extends Specification {
         given:
             AccountId accountId = transactionRepository.newAccountId()
         and:
-            Transaction transaction = transactionRepository.save(Transaction.createNewAccountTransaction(accountId, Money.usd(10.0))
+            Transaction transaction = transactionRepository.save(Transaction.createNewAccountTransaction(accountId, usd(10.0))
                                                                             .withId(transactionRepository.nextTransactionId()))
         when:
             Optional optional = transactionRepository.getLatestTransactionByAccountId(accountId)
@@ -67,7 +71,7 @@ class InMemoryTransactionRepositorySpec extends Specification {
             Transaction initialTransaction = Transaction.createNewAccountTransaction(accountId, Money.gbp(100.0))
                                                         .withId(transactionRepository.nextTransactionId())
         and:
-            Transaction depositTransaction = initialTransaction.nextDepositTransaction(Money.gbp(100.0))
+            Transaction depositTransaction = initialTransaction.nextTransaction(Money.gbp(100.0))
                                                                .withId(transactionRepository.nextTransactionId())
         when:
             transactionRepository.save(depositTransaction)
@@ -82,10 +86,10 @@ class InMemoryTransactionRepositorySpec extends Specification {
             Transaction initialTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(accountId, Money.pln(100.0))
                                                                                    .withId(transactionRepository.nextTransactionId()))
         and:
-            Transaction outdatedTransaction = initialTransaction.nextWithdrawTransaction(Money.pln(100.0))
+            Transaction outdatedTransaction = initialTransaction.nextTransaction(Money.pln(100.0))
                                                                 .withId(transactionRepository.nextTransactionId())
         and:
-            transactionRepository.save(initialTransaction.nextWithdrawTransaction(Money.pln(55.0))
+            transactionRepository.save(initialTransaction.nextTransaction(Money.pln(55.0))
                                                          .withId(transactionRepository.nextTransactionId()))
 
         when:
@@ -94,14 +98,14 @@ class InMemoryTransactionRepositorySpec extends Specification {
             thrown(TransferException)
     }
 
-    def "Should save deposit transaction"() {
+    def "Should save with #amount transaction"() {
         given:
             AccountId newAccountId = transactionRepository.newAccountId()
         and:
-            Transaction initialTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(newAccountId, Money.usd(100.0))
+            Transaction initialTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(newAccountId, usd(100.0))
                                                                                    .withId(transactionRepository.nextTransactionId()))
         and:
-            Transaction depositTransaction = initialTransaction.nextDepositTransaction(Money.usd(11.0))
+            Transaction depositTransaction = initialTransaction.nextTransaction(amount)
                                                                .withId(transactionRepository.nextTransactionId())
         expect:
             initialTransaction == transactionRepository.getLatestTransactionByAccountId(newAccountId).get()
@@ -111,31 +115,42 @@ class InMemoryTransactionRepositorySpec extends Specification {
             Transaction transaction = transactionRepository.getLatestTransactionByAccountId(newAccountId).get()
         then:
             transaction == depositTransaction
+        where:
+            amount     | _
+            usd(-10.0) | _
+            usd(0.0)   | _
+            usd(10.0)  | _
     }
 
-    def "Should save withdraw transaction"() {
+    def "Should save with #transferId and # amount transfer transaction"() {
         given:
             AccountId newAccountId = transactionRepository.newAccountId()
         and:
-            Transaction initialTransaction = Transaction.createNewAccountTransaction(newAccountId, Money.usd(100.0))
-                                                        .withId(transactionRepository.nextTransactionId())
-            transactionRepository.save(initialTransaction)
+            Transaction initialTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(newAccountId, usd(100.0))
+                                                                                   .withId(transactionRepository.nextTransactionId()))
         and:
-            Transaction withdrawTransaction = initialTransaction.nextWithdrawTransaction(Money.usd(15.0))
-                                                                .withId(transactionRepository.nextTransactionId())
+            Transaction depositTransaction = initialTransaction.nextTransferTransaction(transferId, amount)
+                                                               .withId(transactionRepository.nextTransactionId())
         expect:
             initialTransaction == transactionRepository.getLatestTransactionByAccountId(newAccountId).get()
         when:
-            transactionRepository.save(withdrawTransaction)
+            transactionRepository.save(depositTransaction)
+        and:
+            Transaction transaction = transactionRepository.getLatestTransactionByAccountId(newAccountId).get()
         then:
-            withdrawTransaction == transactionRepository.getLatestTransactionByAccountId(newAccountId).get()
+            transaction == depositTransaction
+        where:
+            transferId           | amount
+            TransferId.of(1_000) | usd(-10.0)
+            TransferId.of(1_001) | usd(0.0)
+            TransferId.of(1_002) | usd(10.0)
     }
 
     def "Should return empty transaction for deleted account on getLatestTransactionByAccountId"() {
         given:
             AccountId deletedAccount = transactionRepository.newAccountId()
         and:
-            Transaction initialTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(deletedAccount, Money.usd(100.0))
+            Transaction initialTransaction = transactionRepository.save(Transaction.createNewAccountTransaction(deletedAccount, usd(100.0))
                                                                                    .withId(transactionRepository.nextTransactionId()))
         expect:
             initialTransaction == transactionRepository.getLatestTransactionByAccountId(deletedAccount).get()

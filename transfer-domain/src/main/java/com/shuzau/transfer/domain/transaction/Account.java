@@ -38,13 +38,13 @@ public class Account {
                 .map(getBalance()::subtract)
                 .filter(Money::isPositive)
                 .orElseThrow(() -> new TransferException("Insufficient funds"));
-        latestTransaction = transactionRepository.save(latestTransaction.nextWithdrawTransaction(amount)
+        latestTransaction = transactionRepository.save(latestTransaction.nextTransaction(amount.negate())
                                                                         .withId(transactionRepository.nextTransactionId()));
     }
 
     public void deposit(@NonNull Money amount) {
         validate(amount);
-        latestTransaction = transactionRepository.save(latestTransaction.nextDepositTransaction(amount)
+        latestTransaction = transactionRepository.save(latestTransaction.nextTransaction(amount)
                                                                         .withId(transactionRepository.nextTransactionId()));
     }
 

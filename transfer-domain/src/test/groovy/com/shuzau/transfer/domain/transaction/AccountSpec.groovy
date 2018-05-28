@@ -3,9 +3,6 @@ package com.shuzau.transfer.domain.transaction
 import com.shuzau.transfer.domain.config.InMemoryTransactionRepository
 import com.shuzau.transfer.domain.exception.TransferException
 import com.shuzau.transfer.domain.secondary.TransactionRepository
-import com.shuzau.transfer.domain.transaction.Account
-import com.shuzau.transfer.domain.transaction.AccountId
-import com.shuzau.transfer.domain.transaction.Transaction
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -124,9 +121,9 @@ class AccountSpec extends Specification {
             AccountId accountId = transactionRepository.newAccountId()
             Transaction transaction = Transaction.createNewAccountTransaction(accountId, usd(10.0))
                                                  .withId(transactionRepository.nextTransactionId())
-                                                 .nextDepositTransaction(usd(3.0))
+                                                 .nextTransaction(usd(3.0))
                                                  .withId(transactionRepository.nextTransactionId())
-                                                 .nextWithdrawTransaction(usd(4.5))
+                                                 .nextTransaction(usd(-4.5))
                                                  .withId(transactionRepository.nextTransactionId())
         when:
             Account account = Account.from(transaction)

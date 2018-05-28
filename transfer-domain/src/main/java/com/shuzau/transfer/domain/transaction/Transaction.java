@@ -1,14 +1,19 @@
 package com.shuzau.transfer.domain.transaction;
 
 import com.shuzau.transfer.domain.core.Money;
+import com.shuzau.transfer.domain.transfer.TransferId;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+
+import static lombok.AccessLevel.PRIVATE;
 
 @EqualsAndHashCode
 @ToString
 @Getter
+@RequiredArgsConstructor(access = PRIVATE)
 public class Transaction {
 
     @NonNull
@@ -20,12 +25,7 @@ public class Transaction {
 
     private final Transaction previousTransaction;
 
-    private Transaction(AccountId accountId, TransactionId id, Money amount, Transaction previousTransaction) {
-        this.accountId = accountId;
-        this.id = id;
-        this.amount = amount;
-        this.previousTransaction = previousTransaction;
-    }
+    private final TransferId transferId;
 
     public static Builder createNewAccountTransaction(@NonNull AccountId accountId, @NonNull Money initialBalance) {
         return TransactionBuilder.builder()
@@ -37,18 +37,19 @@ public class Transaction {
         return previousTransaction == null;
     }
 
-    public Builder nextWithdrawTransaction(@NonNull Money amount) {
-        return TransactionBuilder.builder()
-                                 .previousTransaction(this)
-                                 .accountId(getAccountId())
-                                 .amount(amount.negate());
-    }
-
-    public Builder nextDepositTransaction(@NonNull Money amount) {
+    public Builder nextTransaction(@NonNull Money amount) {
         return TransactionBuilder.builder()
                                  .previousTransaction(this)
                                  .accountId(getAccountId())
                                  .amount(amount);
+    }
+
+    public Builder nextTransferTransaction(@NonNull TransferId transferId, @NonNull Money amount) {
+        return TransactionBuilder.builder()
+                                 .previousTransaction(this)
+                                 .accountId(getAccountId())
+                                 .amount(amount)
+                                 .transferId(transferId);
     }
 
     public interface Builder {
@@ -61,6 +62,7 @@ public class Transaction {
         private AccountId accountId;
         private Money amount;
         private Transaction previousTransaction;
+        private TransferId transferId;
 
         private TransactionBuilder() {
         }
@@ -84,9 +86,14 @@ public class Transaction {
             return this;
         }
 
+        private TransactionBuilder transferId(TransferId transferId) {
+            this.transferId = transferId;
+            return this;
+        }
+
         @Override
         public Transaction withId(@NonNull TransactionId id) {
-            return new Transaction(accountId, id, amount, previousTransaction);
+            return new Transaction(accountId, id, amount, previousTransaction, transferId);
         }
     }
 }

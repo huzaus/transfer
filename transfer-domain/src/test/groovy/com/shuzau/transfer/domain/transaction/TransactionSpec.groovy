@@ -1,5 +1,6 @@
 package com.shuzau.transfer.domain.transaction
 
+import com.shuzau.transfer.domain.transfer.TransferId
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -21,11 +22,14 @@ class TransactionSpec extends Specification {
                 accountId == newAccountId
                 amount == balance
                 initial == true
+                previousTransaction == null
+                transferId == null
             }
         where:
             transactionId         | newAccountId     | balance
             TransactionId.of(10L) | AccountId.of(1L) | usd(10.0)
             TransactionId.of(11L) | AccountId.of(2L) | gbp(-10.0)
+            TransactionId.of(12L) | AccountId.of(3L) | gbp(0.0)
     }
 
     def "Should throw NullPointerException when transactionId == #transactionId, balance == #balance account id == #accountId on createNewAccountTransaction"() {
@@ -41,67 +45,83 @@ class TransactionSpec extends Specification {
             TransactionId.of(1L) | AccountId.of(1L) | null
     }
 
-    def "Should create withdraw transaction with #withdrawAmount #currency amount"() {
+    def "Should create transaction with #withdrawAmount USD amount"() {
         given:
             Transaction initialTransaction = Transaction.createNewAccountTransaction(defaultAccountId, usd(10.0))
                                                         .withId(TransactionId.of(1L))
 
         when:
-            Transaction withdrawTransaction = initialTransaction.nextWithdrawTransaction(usd(withdrawAmount))
+            Transaction withdrawTransaction = initialTransaction.nextTransaction(usd(withdrawAmount))
                                                                 .withId(TransactionId.of(2L))
 
         then:
             with(withdrawTransaction) {
                 accountId == defaultAccountId
-                amount == usd(withdrawAmount).negate()
+                amount == usd(withdrawAmount)
                 previousTransaction == initialTransaction
+                transferId == null
             }
         where:
-            withdrawAmount | currency
-            5.0            | 'GBP'
-            -5.0           | 'USD'
-            0.0            | 'USD'
+            withdrawAmount | _
+            5.0            | _
+            -5.0           | _
+            0.0            | _
     }
 
-    def "Should throw NullPointerException when amount is null on nextWithdrawTransaction"() {
+    def "Should throw NullPointerException when transactionId or amount is null on nextTransaction"() {
         given:
             Transaction initialTransaction = Transaction.createNewAccountTransaction(defaultAccountId, usd(10.0))
                                                         .withId(TransactionId.of(1L))
 
         when:
-            initialTransaction.nextWithdrawTransaction(null)
-                              .withId(TransactionId.of(2L))
+            initialTransaction.nextTransaction(amount)
+                              .withId(transactionId)
         then:
             thrown(NullPointerException)
+        where:
+            transactionId        | amount
+            null                 | usd(5.0)
+            TransactionId.of(2L) | null
     }
 
-    def "Should create deposit transaction with #depositAmount #currency amount"() {
+    def "Should create transfer transaction with #withdrawAmount USD amount and #transferId"() {
         given:
             Transaction initialTransaction = Transaction.createNewAccountTransaction(defaultAccountId, usd(10.0))
                                                         .withId(TransactionId.of(1L))
+
         when:
-            Transaction depositTransaction = initialTransaction.nextDepositTransaction(usd(depositAmount))
-                                                               .withId(TransactionId.of(2L))
+            Transaction withdrawTransaction = initialTransaction.nextTransferTransaction(transferId, usd(withdrawAmount))
+                                                                .withId(TransactionId.of(2L))
+
         then:
-            with(depositTransaction) {
+            with(withdrawTransaction) {
                 accountId == defaultAccountId
-                amount == usd(depositAmount)
+                amount == usd(withdrawAmount)
                 previousTransaction == initialTransaction
+                transferId == transferId
             }
         where:
-            depositAmount | currency
-            5.0           | 'GBP'
-            -5.0          | 'USD'
-            0.0           | 'USD'
+            withdrawAmount | transferId
+            5.0            | TransferId.of(1L)
+            -5.0           | TransferId.of(2L)
+            0.0            | TransferId.of(3L)
     }
 
-    def "Should throw NullPointerException when amount is null on nextDepositTransaction"() {
+    def "Should throw NullPointerException when transactionId, transferId or amount is null on nextTransferTransaction"() {
         given:
             Transaction initialTransaction = Transaction.createNewAccountTransaction(defaultAccountId, usd(10.0))
                                                         .withId(TransactionId.of(1L))
+
         when:
-            initialTransaction.nextDepositTransaction(null)
+            initialTransaction.nextTransferTransaction(transferId, amount)
+                              .withId(transactionId)
         then:
             thrown(NullPointerException)
+        where:
+            transactionId        | transferId        | amount
+            null                 | TransferId.of(1L) | usd(10.0)
+            TransactionId.of(1L) | null              | usd(10.0)
+            TransactionId.of(1L) | TransferId.of(1L) | null
     }
+
 }
