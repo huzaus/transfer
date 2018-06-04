@@ -8,7 +8,7 @@ import static lombok.AccessLevel.PRIVATE;
 
 @Value
 @RequiredArgsConstructor(access = PRIVATE, staticName = "of")
-public class TransferCompletedEvent {
+public class TransferCompletedEvent implements TransferEvent {
 
     @NonNull
     private final TransferId transferId;

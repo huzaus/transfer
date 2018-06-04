@@ -13,7 +13,7 @@ import static lombok.AccessLevel.PRIVATE;
 @Value
 @RequiredArgsConstructor(access = PRIVATE)
 @Builder
-public class TransferCreatedEvent {
+public class TransferCreatedEvent implements TransferEvent {
 
     @NonNull
     private final TransferId transferId;

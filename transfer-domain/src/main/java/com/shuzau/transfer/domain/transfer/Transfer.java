@@ -1,6 +1,7 @@
 package com.shuzau.transfer.domain.transfer;
 
 import com.shuzau.transfer.domain.core.Money;
+import com.shuzau.transfer.domain.exception.TransferException;
 import com.shuzau.transfer.domain.transaction.AccountId;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -34,11 +35,25 @@ public class Transfer {
         return new Transfer(event.getTransferId(), event.getSourceAccount(), event.getTargetAccount(), event.getAmount());
     }
 
-    public void apply(TransferCompletedEvent event) {
+    public Transfer apply(@NonNull TransferCompletedEvent event) {
+        validate(event);
         state = COMPLETED;
+        return this;
     }
 
-    public void apply(TransferFailedEvent event) {
+    public Transfer apply(@NonNull TransferFailedEvent event) {
+        validate(event);
         state = FAILED;
+        return this;
+    }
+
+    private void validate(TransferEvent event) {
+        if (!transferId.equals(event.getTransferId())) {
+            throw new TransferException(event + " has different transfer Id, expected :" + transferId);
+        }
+        if (state != CREATED) {
+            throw new TransferException(state + " cannot be changed");
+        }
+
     }
 }

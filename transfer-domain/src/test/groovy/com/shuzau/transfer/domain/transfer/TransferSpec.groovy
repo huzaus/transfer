@@ -1,5 +1,6 @@
 package com.shuzau.transfer.domain.transfer
 
+import com.shuzau.transfer.domain.exception.TransferException
 import com.shuzau.transfer.domain.transaction.AccountId
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -45,43 +46,89 @@ class TransferSpec extends Specification {
             TransferId.of(1L)  | AccountId.of(1L)      | AccountId.of(2L)       | usd(100.0)
     }
 
-    def "Should change Transfer status to COMPLETED on applying TransferCompletedEvent"() {
+    def "Should change Transfer status to #expectedState on applying #event"() {
         given:
             TransferCreatedEvent transferCreatedEvent = TransferCreatedEvent.builder()
                                                                             .transferId(transferId)
-                                                                            .sourceAccount(sourceAccount)
-                                                                            .targetAccount(targetAccount)
-                                                                            .amount(amount)
+                                                                            .sourceAccount(AccountId.of(1L))
+                                                                            .targetAccount(AccountId.of(2L))
+                                                                            .amount(usd(100.0))
                                                                             .build()
 
         and:
             Transfer transfer = Transfer.create(transferCreatedEvent)
         when:
-            transfer.apply(TransferCompletedEvent.of(transferId))
+            transfer.apply(event)
         then:
-            transfer.state == COMPLETED
+            transfer.state == expectedState
         where:
-            transferId        | sourceAccount    | targetAccount    | amount
-            TransferId.of(1L) | AccountId.of(1L) | AccountId.of(2L) | usd(100.0)
+            transferId        | event                                        || expectedState
+            TransferId.of(1L) | TransferCompletedEvent.of(transferId)        || COMPLETED
+            TransferId.of(1L) | TransferFailedEvent.of(transferId, "Reason") || FAILED
     }
 
-    def "Should change Transfer status to Failed on applying TransferFailedEvent"() {
+    def "Should throw TransferException when applying #event on Completed transfer"() {
         given:
             TransferCreatedEvent transferCreatedEvent = TransferCreatedEvent.builder()
                                                                             .transferId(transferId)
-                                                                            .sourceAccount(sourceAccount)
-                                                                            .targetAccount(targetAccount)
-                                                                            .amount(amount)
+                                                                            .sourceAccount(AccountId.of(1L))
+                                                                            .targetAccount(AccountId.of(2L))
+                                                                            .amount(usd(100.0))
+                                                                            .build()
+
+        and:
+            Transfer transfer = Transfer.create(transferCreatedEvent)
+                                        .apply(TransferCompletedEvent.of(transferId))
+        when:
+            transfer.apply(event)
+        then:
+            thrown(TransferException)
+        where:
+            transferId        | event
+            TransferId.of(1L) | TransferCompletedEvent.of(transferId)
+            TransferId.of(1L) | TransferFailedEvent.of(transferId, "Reason")
+    }
+
+    def "Should throw TransferException when applying #event on Failed Transfer"() {
+        given:
+            TransferCreatedEvent transferCreatedEvent = TransferCreatedEvent.builder()
+                                                                            .transferId(transferId)
+                                                                            .sourceAccount(AccountId.of(1L))
+                                                                            .targetAccount(AccountId.of(2L))
+                                                                            .amount(usd(100.0))
+                                                                            .build()
+
+        and:
+            Transfer transfer = Transfer.create(transferCreatedEvent)
+                                        .apply(TransferFailedEvent.of(transferId, 'Reason'))
+        when:
+            transfer.apply(event)
+        then:
+            thrown(TransferException)
+        where:
+            transferId        | event
+            TransferId.of(1L) | TransferCompletedEvent.of(transferId)
+            TransferId.of(1L) | TransferFailedEvent.of(transferId, "Reason")
+    }
+
+    def "Should throw TransferException when applying #event with different transferId"() {
+        given:
+            TransferCreatedEvent transferCreatedEvent = TransferCreatedEvent.builder()
+                                                                            .transferId(transferId)
+                                                                            .sourceAccount(AccountId.of(1L))
+                                                                            .targetAccount(AccountId.of(2L))
+                                                                            .amount(usd(100.0))
                                                                             .build()
 
         and:
             Transfer transfer = Transfer.create(transferCreatedEvent)
         when:
-            transfer.apply(TransferFailedEvent.of(transferId, "Reason"))
+            transfer.apply(event)
         then:
-            transfer.state == FAILED
+            thrown(TransferException)
         where:
-            transferId        | sourceAccount    | targetAccount    | amount
-            TransferId.of(1L) | AccountId.of(1L) | AccountId.of(2L) | usd(100.0)
+            transferId        | eventTransferId   | event
+            TransferId.of(1L) | TransferId.of(2L) | TransferCompletedEvent.of(eventTransferId)
+            TransferId.of(1L) | TransferId.of(2L) | TransferFailedEvent.of(eventTransferId, 'Reason')
     }
 }
