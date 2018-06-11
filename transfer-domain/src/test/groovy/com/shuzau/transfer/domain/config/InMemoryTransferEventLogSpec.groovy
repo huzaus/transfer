@@ -1,17 +1,15 @@
 package com.shuzau.transfer.domain.config
 
 import com.shuzau.transfer.domain.secondary.TransferEventLog
-import com.shuzau.transfer.domain.transaction.AccountId
 import com.shuzau.transfer.domain.transfer.TransferCompletedEvent
-import com.shuzau.transfer.domain.transfer.TransferCreatedEvent
-import com.shuzau.transfer.domain.transfer.TransferFailedEvent
 import com.shuzau.transfer.domain.transfer.TransferId
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Subject
 import spock.lang.Unroll
 
-import static com.shuzau.transfer.domain.core.Money.gbp
+import static com.shuzau.transfer.domain.transfer.DefaultTransferEventFactory.defaultCreatedEvent
+import static com.shuzau.transfer.domain.transfer.DefaultTransferEventFactory.defaultFailedEvent
 
 @Unroll
 class InMemoryTransferEventLogSpec extends Specification {
@@ -46,16 +44,5 @@ class InMemoryTransferEventLogSpec extends Specification {
             transferEventLog.nextTransferId() | transferEventLog.nextTransferId() | [defaultCreatedEvent(transferId), TransferCompletedEvent.of(transferId)]                               || [defaultCreatedEvent(transferId), TransferCompletedEvent.of(transferId)]
     }
 
-    private static TransferFailedEvent defaultFailedEvent(TransferId transferId) {
-        TransferFailedEvent.of(transferId, 'Ops')
-    }
 
-    private static TransferCreatedEvent defaultCreatedEvent(TransferId transferId) {
-        TransferCreatedEvent.builder()
-                            .transferId(transferId)
-                            .sourceAccount(AccountId.of(1L))
-                            .targetAccount(AccountId.of(2L))
-                            .amount(gbp(50.0))
-                            .build()
-    }
 }
