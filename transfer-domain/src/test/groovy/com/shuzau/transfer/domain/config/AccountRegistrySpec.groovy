@@ -1,6 +1,7 @@
-package com.shuzau.transfer.domain.primary
+package com.shuzau.transfer.domain.config
 
 import com.shuzau.transfer.domain.core.Money
+import com.shuzau.transfer.domain.primary.AccountRegistry
 import com.shuzau.transfer.domain.transaction.Account
 import com.shuzau.transfer.domain.transaction.AccountId
 import spock.lang.Shared
