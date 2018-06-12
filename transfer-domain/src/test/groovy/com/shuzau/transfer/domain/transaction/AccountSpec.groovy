@@ -82,6 +82,7 @@ class AccountSpec extends Specification {
             transferId           | amount    || exception
             null                 | gbp(10.0) || NullPointerException
             TransferId.of(1_000) | null      || NullPointerException
+            TransferId.of(1_000) | gbp(-100.0)      || TransferException
     }
 
     def "Should throw TransferException when balance(#balance) < amount(#amount) on withdraw"() {
@@ -145,7 +146,6 @@ class AccountSpec extends Specification {
             TransferId.of(1_002) | usd(5.0)  | usd(0.0)  || usd(5.0)
             TransferId.of(1_003) | usd(-5.0) | usd(2.0)  || usd(-3.0)
             TransferId.of(1_003) | usd(10.0) | usd(-2.0) || usd(8.0)
-            TransferId.of(1_003) | usd(2.0)  | usd(-12.0) || usd(-10.0)
     }
 
     def "Account with #balance should have #expectedBalance after in transfer of #amount"() {

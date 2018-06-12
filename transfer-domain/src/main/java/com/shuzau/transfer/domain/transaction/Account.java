@@ -1,7 +1,5 @@
 package com.shuzau.transfer.domain.transaction;
 
-import java.util.Optional;
-
 import com.shuzau.transfer.domain.core.Money;
 import com.shuzau.transfer.domain.exception.TransferException;
 import com.shuzau.transfer.domain.secondary.TransactionRepository;
@@ -34,30 +32,24 @@ public class Account {
     }
 
     public void withdraw(@NonNull Money amount) {
-        validate(amount);
-        Optional.of(amount)
-                .map(getBalance()::subtract)
-                .filter(Money::isPositive)
-                .orElseThrow(() -> new TransferException("Insufficient funds"));
+        assertPositive(amount);
+        assertSufficientFunds(amount);
         latestTransaction = transactionRepository.save(latestTransaction.nextTransaction(amount.negate())
                                                                         .withId(transactionRepository.nextTransactionId()));
     }
 
     public void deposit(@NonNull Money amount) {
-        validate(amount);
+        assertPositive(amount);
         latestTransaction = transactionRepository.save(latestTransaction.nextTransaction(amount)
                                                                         .withId(transactionRepository.nextTransactionId()));
     }
 
     public void transfer(@NonNull TransferId transferId, @NonNull Money amount) {
+        if (amount.isNegative()) {
+            assertSufficientFunds(amount.negate());
+        }
         latestTransaction = transactionRepository.save(latestTransaction.nextTransferTransaction(transferId, amount)
                                                                         .withId(transactionRepository.nextTransactionId()));
-    }
-
-    private void validate(Money amount) {
-        Optional.of(amount)
-                .filter(Money::isPositive)
-                .orElseThrow(() -> new TransferException("Amount can't be negative: " + amount));
     }
 
     public Money getBalance() {
@@ -70,6 +62,18 @@ public class Account {
         return balance;
     }
 
+    private void assertPositive(Money amount) {
+        if (amount.isNegative()) {
+            throw new TransferException("Amount can't be negative: " + amount);
+        }
+    }
+
+    private void assertSufficientFunds(@NonNull Money amount) {
+        Money diff = getBalance().subtract(amount);
+        if (diff.isNegative()) {
+            throw new TransferException("Insufficient funds: " + diff);
+        }
+    }
 
     public interface Builder {
 

@@ -86,6 +86,17 @@ class MoneySpec extends Specification {
             pln(-1.0) || false
     }
 
+    def "Should return #isNegative for #money on isNegative"() {
+        expect:
+            money.isNegative() == isNegative
+        where:
+            money     || isNegative
+            usd(10.0) || false
+            gbp(0.0)  || false
+            gbp(-0.0) || false
+            pln(-1.0) || true
+    }
+
     def "Should negate #amount on negate"() {
         given:
             Money money = usd(amount)

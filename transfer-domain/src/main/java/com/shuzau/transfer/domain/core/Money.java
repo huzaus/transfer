@@ -36,6 +36,10 @@ public class Money {
         return amount.signum() > -1;
     }
 
+    public boolean isNegative() {
+        return amount.signum() == -1;
+    }
+
     public Money add(Money money) {
         validate(money);
         return Money.builder()
