@@ -3,10 +3,14 @@ package com.shuzau.transfer.domain.core;
 import java.math.BigDecimal;
 import java.util.Currency;
 
-import com.shuzau.transfer.domain.exception.TransferException;
+import io.vavr.control.Validation;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
+
+import static com.shuzau.transfer.domain.core.Validators.validator;
+import static io.vavr.control.Validation.invalid;
+import static io.vavr.control.Validation.valid;
 
 @Value
 @Builder
@@ -41,7 +45,8 @@ public class Money {
     }
 
     public Money add(Money money) {
-        validate(money);
+        validator().accept(validateCurrency(money));
+
         return Money.builder()
                     .amount(this.amount.add(money.amount))
                     .currency(currency)
@@ -49,7 +54,8 @@ public class Money {
     }
 
     public Money subtract(Money money) {
-        validate(money);
+        validator().accept(validateCurrency(money));
+
         return Money.builder()
                     .amount(this.amount.subtract(money.amount))
                     .currency(currency)
@@ -63,9 +69,9 @@ public class Money {
                     .build();
     }
 
-    private void validate(@NonNull Money money) {
-        if (currency != money.currency) {
-            throw new TransferException("Can't operate on different currencies: " + currency + " and " + money.currency);
-        }
+    public Validation<String, Money> validateCurrency(@NonNull Money money) {
+        return currency != money.currency ?
+            invalid("Can't operate on different currencies: " + currency + " and " + money.currency) :
+            valid(money);
     }
 }

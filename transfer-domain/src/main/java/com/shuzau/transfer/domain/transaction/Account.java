@@ -1,15 +1,21 @@
 package com.shuzau.transfer.domain.transaction;
 
 import com.shuzau.transfer.domain.core.Money;
-import com.shuzau.transfer.domain.exception.TransferException;
 import com.shuzau.transfer.domain.secondary.TransactionRepository;
 import com.shuzau.transfer.domain.transfer.TransferId;
+import io.vavr.Function2;
+import io.vavr.Function3;
+import io.vavr.collection.Seq;
+import io.vavr.control.Validation;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
+import static com.shuzau.transfer.domain.core.Validators.multiValidator;
+import static io.vavr.control.Validation.invalid;
+import static io.vavr.control.Validation.valid;
 import static lombok.AccessLevel.PRIVATE;
 
 @RequiredArgsConstructor(access = PRIVATE)
@@ -22,7 +28,6 @@ public class Account {
     private final TransactionRepository transactionRepository;
     private Transaction latestTransaction;
 
-
     public static Builder from(@NonNull Transaction transaction) {
         return new FromTransactionBuilder(transaction);
     }
@@ -31,23 +36,51 @@ public class Account {
         return new NewAccountBuilder(balance);
     }
 
-    public void withdraw(@NonNull Money amount) {
-        assertPositive(amount);
-        assertSufficientFunds(amount);
+    private Validation<Seq<String>, Money> validateTransaction(Money amount) {
+        return validatePositiveAmount(amount).combine(validateCurrency(amount))
+                                             .ap(Function2.constant(amount));
+    }
+
+    private Validation<String, Money> validateCurrency(Money amount) {
+        return latestTransaction.getAmount().validateCurrency(amount);
+    }
+
+
+    public Validation<Seq<String>, Money> validateDeposit(@NonNull Money amount) {
+        return validateTransaction(amount);
+    }
+
+    public Validation<Seq<String>, Money> validateWithdraw(@NonNull Money amount) {
+        return validatePositiveAmount(amount).combine(validateCurrency(amount))
+                                             .combine(validateSufficientFunds(amount))
+                                             .ap(Function3.constant(amount));
+    }
+
+    public Validation<Seq<String>, Money> validateTransfer(@NonNull Money amount) {
+        if (amount.isNegative()) {
+            return validateWithdraw(amount.negate());
+        } else {
+            return validateDeposit(amount);
+        }
+    }
+
+    public void withdraw(Money amount) {
+        multiValidator().accept(validateWithdraw(amount));
+
         latestTransaction = transactionRepository.save(latestTransaction.nextTransaction(amount.negate())
                                                                         .withId(transactionRepository.nextTransactionId()));
     }
 
-    public void deposit(@NonNull Money amount) {
-        assertPositive(amount);
+    public void deposit(Money amount) {
+        multiValidator().accept(validateDeposit(amount));
+
         latestTransaction = transactionRepository.save(latestTransaction.nextTransaction(amount)
                                                                         .withId(transactionRepository.nextTransactionId()));
     }
 
-    public void transfer(@NonNull TransferId transferId, @NonNull Money amount) {
-        if (amount.isNegative()) {
-            assertSufficientFunds(amount.negate());
-        }
+    public void transfer(@NonNull TransferId transferId, Money amount) {
+        multiValidator().accept(validateTransfer(amount));
+
         latestTransaction = transactionRepository.save(latestTransaction.nextTransferTransaction(transferId, amount)
                                                                         .withId(transactionRepository.nextTransactionId()));
     }
@@ -62,17 +95,13 @@ public class Account {
         return balance;
     }
 
-    private void assertPositive(Money amount) {
-        if (amount.isNegative()) {
-            throw new TransferException("Amount can't be negative: " + amount);
-        }
+    private Validation<String, Money> validatePositiveAmount(Money amount) {
+        return amount.isNegative() ? invalid("Amount can't be negative: " + amount) : valid(amount);
     }
 
-    private void assertSufficientFunds(@NonNull Money amount) {
+    private Validation<String, Money> validateSufficientFunds(Money amount) {
         Money diff = getBalance().subtract(amount);
-        if (diff.isNegative()) {
-            throw new TransferException("Insufficient funds: " + diff);
-        }
+        return diff.isNegative() ? invalid("Insufficient funds: " + diff) : valid(amount);
     }
 
     public interface Builder {
