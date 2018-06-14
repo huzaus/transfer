@@ -47,7 +47,7 @@ public class Transfer {
         return transfer;
     }
 
-    public Transfer apply(@NonNull TransferEvent transferEvent) {
+    private Transfer apply(@NonNull TransferEvent transferEvent) {
         return Match(transferEvent).of(
             Case($(instanceOf(TransferCreatedEvent.class)), this::apply),
             Case($(instanceOf(TransferCompletedEvent.class)), this::apply),
@@ -57,7 +57,7 @@ public class Transfer {
             }));
     }
 
-    public Transfer apply(@NonNull TransferCreatedEvent event) {
+    private Transfer apply(@NonNull TransferCreatedEvent event) {
         if (Objects.nonNull(transferId)) {
             throw new TransferException("Transfer is already initialized: " + this);
         }
@@ -69,7 +69,7 @@ public class Transfer {
         return this;
     }
 
-    public Transfer apply(@NonNull TransferCompletedEvent event) {
+    private Transfer apply(@NonNull TransferCompletedEvent event) {
         assertStatus();
         assertTransferIdIsTheSame(event);
         status.assertCreated();
@@ -77,7 +77,7 @@ public class Transfer {
         return this;
     }
 
-    public Transfer apply(@NonNull TransferFailedEvent event) {
+    private Transfer apply(@NonNull TransferFailedEvent event) {
         assertStatus();
         assertTransferIdIsTheSame(event);
         status = FAILED;
