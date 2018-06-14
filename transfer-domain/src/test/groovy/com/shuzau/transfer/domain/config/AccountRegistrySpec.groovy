@@ -8,13 +8,13 @@ import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static com.shuzau.transfer.domain.config.TransferDomainConfiguration.inMemoryAccountRegistry
+import static com.shuzau.transfer.domain.config.TransferDomainConfiguration.inMemoryTransferFacade
 import static java.util.Optional.empty
 
 @Unroll
 class AccountRegistrySpec extends Specification {
     @Shared
-    AccountRegistry accountRegistry = inMemoryAccountRegistry()
+    AccountRegistry accountRegistry = inMemoryTransferFacade()
 
     def "Should throw NullPointerException when balance is null on createAccountWithBalance"() {
         when:

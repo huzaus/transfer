@@ -6,13 +6,13 @@ import com.shuzau.transfer.domain.transfer.TransferId
 import spock.lang.Specification
 import spock.lang.Subject
 
-import static com.shuzau.transfer.domain.config.TransferDomainConfiguration.inMemoryTransferRegistry
+import static com.shuzau.transfer.domain.config.TransferDomainConfiguration.inMemoryTransferFacade
 import static com.shuzau.transfer.domain.core.Money.usd
 import static com.shuzau.transfer.domain.transfer.TransferStatus.CREATED
 
 class TransferRegistrySpec extends Specification {
     @Subject
-    TransferRegistry transferRegistry = inMemoryTransferRegistry()
+    TransferRegistry transferRegistry = inMemoryTransferFacade()
 
     def "Should return empty Optional for non-existent transferId"() {
         given:

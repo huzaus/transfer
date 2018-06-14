@@ -12,7 +12,7 @@ import spock.lang.Specification
 import spock.lang.Subject
 import spock.lang.Unroll
 
-import static com.shuzau.transfer.domain.config.TransferDomainConfiguration.inMemoryAccountRegistry
+import static com.shuzau.transfer.domain.config.TransferDomainConfiguration.inMemoryTransferFacade
 import static com.shuzau.transfer.domain.core.Money.gbp
 import static com.shuzau.transfer.domain.core.Money.usd
 
@@ -20,7 +20,7 @@ import static com.shuzau.transfer.domain.core.Money.usd
 class TransferCreatedProcessorSpec extends Specification {
 
     @Shared
-    AccountRegistry accountRegistry = inMemoryAccountRegistry()
+    AccountRegistry accountRegistry = inMemoryTransferFacade()
     @Shared
     @Subject
     TransferCreatedProcessor transferCreatedProcessor = new TransferCreatedProcessor(accountRegistry)
