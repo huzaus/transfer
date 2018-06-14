@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.shuzau.transfer.domain.secondary.TransferEventPublisher;
 import com.shuzau.transfer.domain.transfer.TransferEvent;
 import com.shuzau.transfer.domain.transfer.TransferEventSubscriber;
+import io.vavr.control.Try;
 import lombok.NonNull;
 
 class LocalTransferEventPublisher implements TransferEventPublisher {
@@ -28,7 +29,7 @@ class LocalTransferEventPublisher implements TransferEventPublisher {
                    .filter(clazz -> clazz.isInstance(event))
                    .map(subscribers::get)
                    .flatMap(List::stream)
-                   .forEach(subscriber -> subscriber.onEvent(event));
+                   .forEach(subscriber -> Try.run(() -> subscriber.onEvent(event)));
 
     }
 
