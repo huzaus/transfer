@@ -11,5 +11,5 @@ public interface TransferRegistry {
 
     Optional<Transfer> findTransferById(TransferId id);
 
-    TransferId submitTransfer(AccountId sourceAccount, AccountId targetAccount, Money balance);
+    TransferId submitTransfer(AccountId sourceAccount, AccountId targetAccount, Money amount);
 }
