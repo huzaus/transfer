@@ -1,3 +1,4 @@
 rootProject.name = 'transfer'
 include 'transfer-domain'
+include 'transfer-rest-api'
 
