@@ -14,7 +14,9 @@ subprojects {
     }
 
     dependencies {
+        compile 'io.reactivex.rxjava2:rxjava:2.1.14'
         compile 'io.vavr:vavr:0.9.2'
+        compile 'org.slf4j:slf4j-api:1.7.25'
         compileOnly 'org.projectlombok:lombok:1.16.20'
         testCompile 'org.codehaus.groovy:groovy-all:2.4.15'
         testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'

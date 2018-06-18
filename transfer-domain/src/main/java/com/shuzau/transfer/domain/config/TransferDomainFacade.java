@@ -6,8 +6,8 @@ import java.util.Optional;
 import com.shuzau.transfer.domain.core.Money;
 import com.shuzau.transfer.domain.primary.TransferFacade;
 import com.shuzau.transfer.domain.secondary.TransactionRepository;
+import com.shuzau.transfer.domain.secondary.TransferEventBus;
 import com.shuzau.transfer.domain.secondary.TransferEventLog;
-import com.shuzau.transfer.domain.secondary.TransferEventPublisher;
 import com.shuzau.transfer.domain.transaction.Account;
 import com.shuzau.transfer.domain.transaction.AccountId;
 import com.shuzau.transfer.domain.transfer.Transfer;
@@ -21,42 +21,41 @@ class TransferDomainFacade implements TransferFacade {
     @NonNull
     private final TransferEventLog transferEventLog;
     @NonNull
-    private final TransferEventPublisher transferEventPublisher;
+    private final TransferEventBus transferEventBus;
     @NonNull
     private final TransactionRepository transactionRepository;
 
-    private TransferDomainFacade(TransferEventLog transferEventLog, TransferEventPublisher transferEventPublisher,
+    private TransferDomainFacade(TransferEventLog transferEventLog, TransferEventBus transferEventBus,
         TransactionRepository transactionRepository) {
         this.transferEventLog = transferEventLog;
-        this.transferEventPublisher = transferEventPublisher;
+        this.transferEventBus = transferEventBus;
         this.transactionRepository = transactionRepository;
     }
 
-    public static TransferDomainFacade of(TransferEventLog eventLog, TransferEventPublisher publisher, TransactionRepository repository) {
-        publisher.subscribe(TransferEvent.class, eventLog::store);
+    static TransferDomainFacade of(TransferEventLog eventLog, TransferEventBus publisher, TransactionRepository repository) {
         return new TransferDomainFacade(eventLog, publisher, repository);
     }
 
     @Override
-    public Optional<Account> findAccountById(AccountId id) {
+    public Optional<Account> findAccountById(@NonNull AccountId id) {
         return transactionRepository.getLatestTransactionByAccountId(id)
                                     .map(transaction -> Account.from(transaction)
                                                                .withRepository(transactionRepository));
     }
 
     @Override
-    public Account createAccountWithBalance(Money balance) {
+    public Account createAccountWithBalance(@NonNull Money balance) {
         return Account.newAccount(balance)
                       .withRepository(transactionRepository);
     }
 
     @Override
-    public void deleteAccount(AccountId id) {
+    public void deleteAccount(@NonNull AccountId id) {
         transactionRepository.delete(id);
     }
 
     @Override
-    public Optional<Transfer> findTransferById(TransferId id) {
+    public Optional<Transfer> findTransferById(@NonNull TransferId id) {
         List<TransferEvent> transferEvents = transferEventLog.findEvents(id);
         return Optional.of(transferEvents)
                        .filter(events -> !events.isEmpty())
@@ -64,14 +63,14 @@ class TransferDomainFacade implements TransferFacade {
     }
 
     @Override
-    public TransferId submitTransfer(AccountId sourceAccount, AccountId targetAccount, Money amount) {
+    public TransferId submitTransfer(@NonNull AccountId sourceAccount, @NonNull AccountId targetAccount, @NonNull Money amount) {
         TransferId transferId = transferEventLog.nextTransferId();
-        transferEventPublisher.publish(TransferCreatedEvent.builder()
-                                                           .transferId(transferId)
-                                                           .sourceAccount(sourceAccount)
-                                                           .targetAccount(targetAccount)
-                                                           .amount(amount)
-                                                           .build());
+        transferEventBus.publish(TransferCreatedEvent.builder()
+                                                     .transferId(transferId)
+                                                     .sourceAccount(sourceAccount)
+                                                     .targetAccount(targetAccount)
+                                                     .amount(amount)
+                                                     .build());
         return transferId;
     }
 }

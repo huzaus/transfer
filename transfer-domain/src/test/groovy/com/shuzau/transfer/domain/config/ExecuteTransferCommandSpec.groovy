@@ -1,12 +1,13 @@
 package com.shuzau.transfer.domain.config
 
 import com.shuzau.transfer.domain.primary.AccountRegistry
+import com.shuzau.transfer.domain.secondary.TransferEventBus
 import com.shuzau.transfer.domain.transaction.AccountId
 import com.shuzau.transfer.domain.transfer.TransferCompletedEvent
-import com.shuzau.transfer.domain.transfer.TransferCreatedEvent
 import com.shuzau.transfer.domain.transfer.TransferEvent
 import com.shuzau.transfer.domain.transfer.TransferFailedEvent
 import com.shuzau.transfer.domain.transfer.TransferId
+import io.reactivex.observers.TestObserver
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Subject
@@ -17,29 +18,36 @@ import static com.shuzau.transfer.domain.core.Money.gbp
 import static com.shuzau.transfer.domain.core.Money.usd
 
 @Unroll
-class TransferCreatedProcessorSpec extends Specification {
+class ExecuteTransferCommandSpec extends Specification {
 
     @Shared
     AccountRegistry accountRegistry = inMemoryTransferFacade()
     @Shared
+    TransferEventBus transferEventBus = new LocalTransferEventBus()
+    @Shared
+    TestObserver observer
+    @Shared
     @Subject
-    TransferCreatedProcessor transferCreatedProcessor = new TransferCreatedProcessor(accountRegistry)
+    ExecuteTransferCommand executeTransferCommand = new ExecuteTransferCommand(accountRegistry, transferEventBus)
+
+    def setup() {
+        observer = TestObserver.create()
+        transferEventBus.observe(TransferEvent)
+                        .subscribe(observer)
+    }
+
+    def teardown() {
+        observer.cancel()
+    }
 
     def "Should return TransferCompletedEvent for #transferId"() {
         given:
             AccountId sourceAccount = accountRegistry.createAccountWithBalance(sourceInitBalance).getId()
             AccountId targetAccount = accountRegistry.createAccountWithBalance(targetInitBalance).getId()
-        and:
-            TransferCreatedEvent event = TransferCreatedEvent.builder()
-                                                             .sourceAccount(sourceAccount)
-                                                             .targetAccount(targetAccount)
-                                                             .transferId(transferId)
-                                                             .amount(amount)
-                                                             .build()
         when:
-            TransferEvent result = transferCreatedProcessor.process(event)
+            executeTransferCommand.executeTransfer(sourceAccount, targetAccount, transferId, amount)
         then:
-            result == TransferCompletedEvent.of(transferId)
+            observer.values() == [TransferCompletedEvent.of(transferId)]
         and:
             accountRegistry.findAccountById(sourceAccount).get().getBalance() == sourceResultBalance
             accountRegistry.findAccountById(targetAccount).get().getBalance() == targetResultBalance
@@ -55,17 +63,10 @@ class TransferCreatedProcessorSpec extends Specification {
         given:
             AccountId sourceAccount = accountRegistry.createAccountWithBalance(sourceInitBalance).getId()
             AccountId targetAccount = accountRegistry.createAccountWithBalance(targetInitBalance).getId()
-        and:
-            TransferCreatedEvent event = TransferCreatedEvent.builder()
-                                                             .sourceAccount(sourceAccount)
-                                                             .targetAccount(targetAccount)
-                                                             .transferId(transferId)
-                                                             .amount(amount)
-                                                             .build()
         when:
-            TransferEvent result = transferCreatedProcessor.process(event)
+            executeTransferCommand.executeTransfer(sourceAccount, targetAccount, transferId, amount)
         then:
-            result == TransferFailedEvent.of(transferId, reason)
+            observer.values() == [TransferFailedEvent.of(transferId, reason)]
         where:
             sourceInitBalance | targetInitBalance | transferId        | amount    || reason
             gbp(30.0)         | usd(100.0)        | TransferId.of(1L) | usd(20.0) || "Can't operate on different currencies: GBP and USD"
@@ -78,16 +79,10 @@ class TransferCreatedProcessorSpec extends Specification {
     def "Should return TransferFailedEvent when source account does not exist #reason"() {
         given:
             AccountId targetAccount = accountRegistry.createAccountWithBalance(usd(100.0)).getId()
-            TransferCreatedEvent event = TransferCreatedEvent.builder()
-                                                             .sourceAccount(accountId)
-                                                             .targetAccount(targetAccount)
-                                                             .transferId(transferId)
-                                                             .amount(usd(10.0))
-                                                             .build()
         when:
-            TransferEvent result = transferCreatedProcessor.process(event)
+            executeTransferCommand.executeTransfer(accountId, targetAccount, transferId, usd(10.0))
         then:
-            result == TransferFailedEvent.of(transferId, reason)
+            observer.values() == [TransferFailedEvent.of(transferId, reason)]
         where:
             accountId           | transferId        || reason
             AccountId.of(1_000) | TransferId.of(4L) || "$accountId doesn't exist"
@@ -96,16 +91,10 @@ class TransferCreatedProcessorSpec extends Specification {
     def "Should return TransferFailedEvent when target account does not exist #reason"() {
         given:
             AccountId sourceAccount = accountRegistry.createAccountWithBalance(usd(100.0)).getId()
-            TransferCreatedEvent event = TransferCreatedEvent.builder()
-                                                             .sourceAccount(sourceAccount)
-                                                             .targetAccount(accountId)
-                                                             .transferId(transferId)
-                                                             .amount(usd(10.0))
-                                                             .build()
         when:
-            TransferEvent result = transferCreatedProcessor.process(event)
+            executeTransferCommand.executeTransfer(sourceAccount, accountId, transferId, usd(100.0))
         then:
-            result == TransferFailedEvent.of(transferId, reason)
+            observer.values() == [TransferFailedEvent.of(transferId, reason)]
         where:
             accountId           | transferId        || reason
             AccountId.of(1_000) | TransferId.of(4L) || "$accountId doesn't exist"
@@ -113,22 +102,18 @@ class TransferCreatedProcessorSpec extends Specification {
 
     def "Should rethrow #exception from accountRegistry"() {
         given:
-            TransferCreatedProcessor corruptedProcessor = new TransferCreatedProcessor(Stub(AccountRegistry) {
+            AccountRegistry corrupterAccountRegistry = Stub(AccountRegistry) {
                 findAccountById(accountId) >> { throw exception }
-            })
+            }
         and:
-            TransferCreatedEvent event = TransferCreatedEvent.builder()
-                                                             .sourceAccount(accountId)
-                                                             .targetAccount(AccountId.of(1L))
-                                                             .transferId(TransferId.of(4L))
-                                                             .amount(usd(10.0))
-                                                             .build()
+            ExecuteTransferCommand corruptedProcessor = new ExecuteTransferCommand(corrupterAccountRegistry, transferEventBus)
         when:
-            corruptedProcessor.process(event)
+            corruptedProcessor.executeTransfer(accountId, AccountId.of(1L), TransferId.of(4L), usd(10.0))
         then:
             Exception thrownException = thrown()
-        and:
             exception == thrownException
+        and:
+            observer.assertEmpty()
         where:
             accountId           | exception
             AccountId.of(1_000) | new NullPointerException()
